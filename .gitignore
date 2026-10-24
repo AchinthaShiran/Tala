@@ -11,6 +11,6 @@ dist/
 build/
 *.db
 *.db-*
-.assistant/data/
+.deskaide/data/
 .import_linter_cache/
-.assistant-home/
+.deskaide-home/

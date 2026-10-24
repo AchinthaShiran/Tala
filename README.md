@@ -1,4 +1,4 @@
-# Local Assistant
+# DeskAide
 
 A local, OS-agnostic AI assistant for your PC. Chat in plain language; a local model (via
 [Ollama](https://ollama.com)) picks and runs **tools** defined in simple YAML files called **packs**.
@@ -38,30 +38,30 @@ ollama pull gemma4:e2b && ollama pull granite4.1:3b && ollama pull nomic-embed-t
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-lpa doctor          # checks Ollama, models, packs, tool availability on this machine
-lpa chat            # start talking
+deskaide doctor          # checks Ollama, models, packs, tool availability on this machine
+deskaide chat            # start talking
 ```
 
 Other commands:
 
 | Command | Purpose |
 | --- | --- |
-| `lpa ask "..."` | One question, then exit |
-| `lpa packs list [--all]` | Tools available here (and why others are not) |
-| `lpa packs show NAME` | Full definition of a tool |
-| `lpa packs validate [PATH...] [--strict]` | Lint packs (use in CI for your own packs) |
-| `lpa packs trust [DIR] [--revoke]` | Allow packs from `<DIR>/.assistant/packs` (untrusted by default) |
-| `lpa facts add/list/remove` | Things the assistant should always remember ("my phone is 192.168.1.20") |
-| `lpa audit` | Recent tool executions |
-| `lpa eval retrieval [--embeddings]` / `lpa eval agent` | Measure tool-selection quality on the golden set |
+| `deskaide ask "..."` | One question, then exit |
+| `deskaide packs list [--all]` | Tools available here (and why others are not) |
+| `deskaide packs show NAME` | Full definition of a tool |
+| `deskaide packs validate [PATH...] [--strict]` | Lint packs (use in CI for your own packs) |
+| `deskaide packs trust [DIR] [--revoke]` | Allow packs from `<DIR>/.deskaide/packs` (untrusted by default) |
+| `deskaide facts add/list/remove` | Things the assistant should always remember ("my phone is 192.168.1.20") |
+| `deskaide audit` | Recent tool executions |
+| `deskaide eval retrieval [--embeddings]` / `deskaide eval agent` | Measure tool-selection quality on the golden set |
 
-Inside `lpa chat`: `/tools`, `/history`, `/reset`, `/exit`. Sessions are saved and resume automatically
-(`lpa chat --session work`).
+Inside `deskaide chat`: `/tools`, `/history`, `/reset`, `/exit`. Sessions are saved and resume automatically
+(`deskaide chat --session work`).
 
 ## Add your own tool in two minutes
 
-Create `~/.config/local-assistant/packs/mine.yaml` (Windows: `%LOCALAPPDATA%\local-assistant\packs\`;
-run `lpa doctor` to see the exact path), or `./.assistant/packs/` for a per-project pack (project packs load only after `lpa packs trust`,
+Create `~/.config/deskaide/packs/mine.yaml` (Windows: `%LOCALAPPDATA%\deskaide\packs\`;
+run `deskaide doctor` to see the exact path), or `./.deskaide/packs/` for a per-project pack (project packs load only after `deskaide packs trust`,
 because a pack defines what may run on your machine):
 
 ```yaml
@@ -76,14 +76,14 @@ tools:
 ```
 
 ```bash
-lpa packs validate      # catches mistakes before the model ever sees the tool
-lpa chat                # "which branches do I have?"
+deskaide packs validate      # catches mistakes before the model ever sees the tool
+deskaide chat                # "which branches do I have?"
 ```
 
 ## Configuration
 
-Optional `config.yaml` (location shown by `lpa doctor`). Everything has a default; override only what
-you need. Environment variables use `ASSISTANT__SECTION__KEY=value`.
+Optional `config.yaml` (location shown by `deskaide doctor`). Everything has a default; override only what
+you need. Environment variables use `DESKAIDE__SECTION__KEY=value`.
 
 ```yaml
 models:
@@ -121,6 +121,13 @@ src/assistant/
 tests/         unit, pack quality gate, integration (scripted model), architecture
 ```
 
+## Renaming or rebranding
+
+The product name, command, environment-variable prefix and folder names live in one file:
+[`src/assistant/domain/branding.py`](src/assistant/domain/branding.py). Change the constants there, rename
+the console script and project name in `pyproject.toml`, and search-replace the Markdown docs. A test
+(`tests/test_branding.py`) fails if the code base hard-codes any of these elsewhere.
+
 ## Development
 
 ```bash
@@ -128,7 +135,7 @@ pytest                      # 251 tests, fully offline (93% coverage)
 ruff check . && ruff format --check .
 mypy                        # strict
 lint-imports                # layer contracts (also part of pytest)
-lpa eval retrieval -v       # tool-selection regression check
+deskaide eval retrieval -v       # tool-selection regression check
 ```
 
 CI runs all of the above on Windows, Linux and macOS (`.github/workflows/ci.yml`).
@@ -138,7 +145,7 @@ CI runs all of the above on Windows, Linux and macOS (`.github/workflows/ci.yml`
 - Front end: CLI. The service API is front-end agnostic; an HTTP/WebSocket or tray adapter is the next step.
 - Long-running/interactive programs (GUI apps, `scrcpy` mirroring) are not supported as tools yet.
 - Commands are not OS-sandboxed; protection comes from approval policy, constraints and bounded execution.
-- Small models (2-4B) make mistakes. Measure with `lpa eval agent` before trusting a model, and keep
+- Small models (2-4B) make mistakes. Measure with `deskaide eval agent` before trusting a model, and keep
   mutating tools on `ask`.
 
 See [CHANGELOG](CHANGELOG.md) and the decision records in [.10x/adrs](.10x/adrs).

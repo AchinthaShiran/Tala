@@ -1,4 +1,4 @@
-"""`lpa` command line: a thin shell over the service API (no business logic here)."""
+"""Command line: a thin shell over the service API (no business logic here)."""
 
 from __future__ import annotations
 
@@ -14,10 +14,11 @@ from rich.markup import escape
 from rich.table import Table
 
 from assistant import __version__
-from assistant.bootstrap import Runtime, build_runtime, pack_roots
+from assistant.bootstrap import Runtime, build_runtime, pack_roots, untrusted_project_packs
 from assistant.cli.render import ConsoleRenderer
 from assistant.config import AppPaths, Settings, TrustStore, default_paths, load_settings
 from assistant.domain import AssistantError, current_platform
+from assistant.domain.branding import APP_NAME, COMMAND, PROJECT_DIR, TAGLINE, cmd
 from assistant.evaluation import (
     SimulatedRunner,
     evaluate_agent,
@@ -31,7 +32,8 @@ from assistant.packs import PackRoot, Severity, ToolRegistry, load_packs
 from assistant.retrieval import ToolIndex
 
 app = typer.Typer(
-    help="Local PC assistant: chat in natural language, extend it with YAML packs.",
+    name=COMMAND,
+    help=TAGLINE,
     no_args_is_help=True,
     add_completion=False,
 )
@@ -85,7 +87,7 @@ def chat(
     renderer = ConsoleRenderer(console, show_tool_output=show_output)
     assistant = runtime.assistant
     console.print(
-        f"[bold]Local Assistant {__version__}[/bold] · {len(runtime.registry)} tools on "
+        f"[bold]{APP_NAME} {__version__}[/bold] · {len(runtime.registry)} tools on "
         f"{current_platform().value} · session '{session}' · /help for commands"
     )
     try:
@@ -211,14 +213,14 @@ def packs_trust(
     revoke: Annotated[bool, typer.Option("--revoke", help="Stop trusting it")] = False,
     config: ConfigOpt = None,
 ) -> None:
-    """Allow (or stop allowing) packs from <project>/.assistant/packs to load."""
+    """Allow (or stop allowing) packs from <project>/<project dir>/packs to load."""
     _, paths = _load(config)
     directory = (project or Path.cwd()).resolve()
     store = TrustStore(paths.trusted_projects)
     if revoke:
         console.print("Revoked." if store.revoke(directory) else "It was not trusted.")
         return
-    packs_dir = directory / ".assistant" / "packs"
+    packs_dir = directory / PROJECT_DIR / "packs"
     if packs_dir.is_dir():
         console.print("Packs that will be able to run commands on this machine:")
         for file in sorted(packs_dir.rglob("*.y*ml")):
@@ -288,6 +290,14 @@ def doctor(config: ConfigOpt = None) -> None:
         disabled_tools=settings.packs.disabled_tools,
     )
     registry = ToolRegistry(report.tools.values(), current_platform())
+    skipped = untrusted_project_packs(paths)
+    if skipped is not None:
+        row(
+            "project packs",
+            False,
+            f"{skipped} ignored (untrusted); run: {cmd('packs', 'trust')}",
+            fatal=False,
+        )
     row(
         "packs",
         not report.errors,
@@ -315,9 +325,11 @@ def _facts(config: Path | None) -> FactStore:
     return FactStore(paths.facts_db)
 
 
-@facts_app.command("add")
+_FACT_EXAMPLE = cmd("facts", "add", '"phone ip"', "192.168.1.20:5555")
+
+
+@facts_app.command("add", help=f"Remember a fact, e.g. `{_FACT_EXAMPLE}`.")
 def facts_add(key: str, value: str, config: ConfigOpt = None) -> None:
-    """Remember a fact, e.g. `lpa facts add "phone ip" 192.168.1.20:5555`."""
     store = _facts(config)
     try:
         store.remember(key, value)

@@ -34,6 +34,7 @@ from assistant.domain import (
     ToolProposedEvent,
     ToolResultEvent,
 )
+from assistant.domain.branding import cmd
 
 log = logging.getLogger(__name__)
 
@@ -203,9 +204,7 @@ def friendly_error(exc: Exception) -> str:
     if name in {"ConnectError", "ConnectionError", "ConnectTimeout", "ReadTimeout"} or (
         "connect" in text.lower() and "refused" in text.lower()
     ):
-        return (
-            "I can't reach the language model (is Ollama running?). Run `lpa doctor` to diagnose."
-        )
+        return f"I can't reach the language model (is Ollama running?). Run `{cmd('doctor')}` to diagnose."
     if name == "ResponseError" and "not found" in text.lower():
-        return f"A configured model is not installed: {text}. Run `lpa doctor`."
+        return f"A configured model is not installed: {text}. Run `{cmd('doctor')}`."
     return f"Something went wrong: {text or name}"

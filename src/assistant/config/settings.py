@@ -11,8 +11,8 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from assistant.domain import ApprovalMode, ConfigError, RiskLevel
+from assistant.domain.branding import SETTINGS_ENV_PREFIX as ENV_PREFIX
 
-ENV_PREFIX = "ASSISTANT__"
 AGENT_NAMES = ("router", "chat", "executor", "summarizer")
 
 
@@ -130,7 +130,7 @@ def load_settings(
     env: Mapping[str, str] | None = None,
     overrides: Mapping[str, Any] | None = None,
 ) -> Settings:
-    """Merge defaults, YAML file, ``ASSISTANT__A__B=value`` env vars and explicit overrides."""
+    """Merge defaults, YAML file, ``<PREFIX>__A__B=value`` env vars and explicit overrides."""
     merged: dict[str, Any] = Settings().model_dump(mode="json")
     if config_file is not None and config_file.exists():
         try:

@@ -4,10 +4,11 @@ from pathlib import Path
 
 from assistant.bootstrap import pack_roots, untrusted_project_packs
 from assistant.config import AppPaths, Settings, TrustStore
+from assistant.domain.branding import PROJECT_DIR
 
 
 def project_with_pack(root: Path) -> Path:
-    packs = root / ".assistant" / "packs"
+    packs = root / PROJECT_DIR / "packs"
     packs.mkdir(parents=True)
     (packs / "x.yaml").write_text("pack: x\ntools: []\n", encoding="utf-8")
     return root
@@ -22,7 +23,7 @@ def test_project_packs_are_ignored_until_trusted(tmp_path: Path):
     project = project_with_pack(tmp_path / "repo")
 
     assert "project" not in labels(paths, project)
-    assert untrusted_project_packs(paths, project) == project / ".assistant" / "packs"
+    assert untrusted_project_packs(paths, project) == project / PROJECT_DIR / "packs"
 
     TrustStore(paths.trusted_projects).trust(project)
     assert "project" in labels(paths, project)

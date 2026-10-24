@@ -5,6 +5,8 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 
 from assistant.config import Settings, default_paths, load_settings
 from assistant.domain import ConfigError
+from assistant.domain.branding import HOME_ENV
+from assistant.domain.branding import SETTINGS_ENV_PREFIX as ENV_PREFIX
 from assistant.memory import FactStore, approx_tokens, compact_old_tool_outputs, fit_to_budget
 
 # -- history -------------------------------------------------------------------------------------
@@ -93,8 +95,8 @@ def test_layering_file_then_env_then_overrides(tmp_path):
         "models:\n  main:\n    name: file-model\nruntime:\n  max_steps: 5\n", encoding="utf-8"
     )
     env = {
-        "ASSISTANT__MODELS__MAIN__NUM_CTX": "16384",
-        "ASSISTANT__RUNTIME__MAX_STEPS": "7",
+        f"{ENV_PREFIX}MODELS__MAIN__NUM_CTX": "16384",
+        f"{ENV_PREFIX}RUNTIME__MAX_STEPS": "7",
         "OTHER": "x",
     }
     s = load_settings(cfg, env=env, overrides={"retrieval": {"top_k": 9}})
@@ -127,7 +129,7 @@ def test_invalid_config_raises_config_error(tmp_path, content):
 
 
 def test_paths_honour_assistant_home(monkeypatch, tmp_path):
-    monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
+    monkeypatch.setenv(HOME_ENV, str(tmp_path))
     paths = default_paths()
     assert paths.config_file == tmp_path / "config" / "config.yaml"
     assert paths.checkpoints_db.parent == tmp_path / "data"

@@ -1,5 +1,5 @@
 # Golden set: request -> acceptable tool(s), or `none` for plain conversation.
-# Add a case whenever the assistant picks the wrong tool; run `lpa eval run`.
+# Add a case whenever the assistant picks the wrong tool; run `deskaide eval run`.
 cases:
   - {query: how much disk space is left, expect: disk_free}
   - {query: is my C drive almost full, expect: disk_free}

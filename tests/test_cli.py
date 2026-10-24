@@ -5,6 +5,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from assistant.cli import app as cli_app
+from assistant.domain.branding import HOME_ENV
 
 runner = CliRunner()
 GOOD = """
@@ -45,13 +46,13 @@ def test_validate_strict_fails_on_warnings(tmp_path: Path):
 
 
 def test_validate_builtin_packs_is_clean(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
+    monkeypatch.setenv(HOME_ENV, str(tmp_path))
     result = runner.invoke(cli_app.app, ["packs", "validate", "--strict"])
     assert result.exit_code == 0, result.output
 
 
 def test_packs_list_and_show(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
+    monkeypatch.setenv(HOME_ENV, str(tmp_path))
     listed = runner.invoke(cli_app.app, ["packs", "list"])
     assert listed.exit_code == 0 and "disk_free" in listed.output
     shown = runner.invoke(cli_app.app, ["packs", "show", "disk_free"])
@@ -60,7 +61,7 @@ def test_packs_list_and_show(monkeypatch, tmp_path: Path):
 
 
 def test_facts_commands(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
+    monkeypatch.setenv(HOME_ENV, str(tmp_path))
     assert runner.invoke(cli_app.app, ["facts", "add", "phone ip", "1.2.3.4"]).exit_code == 0
     assert "phone ip" in runner.invoke(cli_app.app, ["facts", "list"]).output
     assert runner.invoke(cli_app.app, ["facts", "remove", "phone ip"]).exit_code == 0
@@ -69,7 +70,7 @@ def test_facts_commands(monkeypatch, tmp_path: Path):
 
 def test_user_pack_dir_extends_the_assistant(monkeypatch, tmp_path: Path):
     """The headline feature: drop a YAML file in the user pack dir and the tool appears."""
-    monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
+    monkeypatch.setenv(HOME_ENV, str(tmp_path))
     packs = tmp_path / "config" / "packs"
     packs.mkdir(parents=True)
     (packs / "mine.yaml").write_text(GOOD.replace("demo", "mine"), encoding="utf-8")
@@ -77,7 +78,7 @@ def test_user_pack_dir_extends_the_assistant(monkeypatch, tmp_path: Path):
 
 
 def test_audit_with_no_entries(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
+    monkeypatch.setenv(HOME_ENV, str(tmp_path))
     assert "No audit entries" in runner.invoke(cli_app.app, ["audit"]).output
 
 

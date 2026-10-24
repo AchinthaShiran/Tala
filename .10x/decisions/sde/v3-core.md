@@ -3,7 +3,7 @@
 All planned layers shipped: domain, packs (loader/validator/registry), tools (arguments/rendering/runner/executor+LangChain adapter), safety (policy/audit/fencing), retrieval (hybrid index), llm (factory/health), memory (checkpointer/history/facts), agent (LangGraph), service, bootstrap, CLI, evaluation, 95 builtin tools, docs, CI.
 
 ## Deviations from the plan
-- Added **project-pack trust** (`config.trust`, `lpa packs trust`): found while self-reviewing; a cloned repo's `.assistant/packs` could otherwise define tools with an arbitrary `risk`.
+- Added **project-pack trust** (`config.trust`, `deskaide packs trust`): found while self-reviewing; a cloned repo's `.deskaide/packs` could otherwise define tools with an arbitrary `risk`.
 - Added `output_encoding` validation (unknown codec would crash execution).
 - Retrieval confidence rule tightened after the first eval run (single generic word such as "today" matched a keyword and counted as STRONG): STRONG now needs a tool-name match or >=2 matched terms.
 - Layer contract adjusted: `evaluation` sits above `service` (it drives the service), not below.

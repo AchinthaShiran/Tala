@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "local-assistant"
+name = "deskaide"
 version = "3.0.0"
 description = "Local, OS-agnostic desktop AI assistant: YAML tool packs, LangGraph agent, Ollama."
 readme = "README.md"
@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-lpa = "assistant.cli.app:main"
+deskaide = "assistant.cli.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/assistant"]

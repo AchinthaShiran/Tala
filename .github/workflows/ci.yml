@@ -30,8 +30,8 @@ jobs:
       - name: Architecture contracts
         run: lint-imports
       - name: Pack quality gate
-        run: lpa packs validate --strict
+        run: deskaide packs validate --strict
       - name: Tests
         run: pytest --cov=assistant --cov-report=term-missing
       - name: Retrieval regression (keyword mode)
-        run: lpa eval retrieval --min-recall 0.9
+        run: deskaide eval retrieval --min-recall 0.9

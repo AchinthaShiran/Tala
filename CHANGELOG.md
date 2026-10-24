@@ -7,7 +7,7 @@ Complete rebuild of the v2 prototype. See [docs/from-v2.md](docs/from-v2.md).
 ### Added
 - LangChain + LangGraph agent: route, executor loop (bounded), authorize (interrupt), run, summarize.
 - Pack format with logical tools, per-OS variants, typed parameters with constraints, conditional
-  arguments, defaults, layered pack directories, strict loader and `lpa packs validate`.
+  arguments, defaults, layered pack directories, strict loader and `deskaide packs validate`.
 - 95 builtin tools: system, processes, network, files (cross-platform) plus git, docker, adb, fastboot,
   npm, winget, powercfg, schtasks, wevtutil.
 - Hybrid tool retrieval (FTS5 BM25 + sqlite-vec, RRF) with confidence-driven routing.

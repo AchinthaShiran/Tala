@@ -8,8 +8,7 @@ from pathlib import Path
 
 from platformdirs import user_config_path, user_data_path
 
-APP_NAME = "local-assistant"
-HOME_ENV = "ASSISTANT_HOME"
+from assistant.domain.branding import APP_SLUG, HOME_ENV, PROJECT_DIR
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,14 +50,14 @@ class AppPaths:
 
 
 def default_paths(data_dir_override: Path | None = None) -> AppPaths:
-    """``$ASSISTANT_HOME`` wins, then the platform config/data directories."""
+    """The home-directory environment variable (see ``branding.HOME_ENV``) wins, then the platform config/data directories."""
     home = os.environ.get(HOME_ENV)
     if home:
         root = Path(home)
         return AppPaths(root / "config", data_dir_override or root / "data")
     return AppPaths(
-        user_config_path(APP_NAME, appauthor=False),
-        data_dir_override or user_data_path(APP_NAME, appauthor=False),
+        user_config_path(APP_SLUG, appauthor=False),
+        data_dir_override or user_data_path(APP_SLUG, appauthor=False),
     )
 
 
@@ -68,4 +67,4 @@ def builtin_packs_dir() -> Path:
 
 
 def project_packs_dir(cwd: Path | None = None) -> Path:
-    return (cwd or Path.cwd()) / ".assistant" / "packs"
+    return (cwd or Path.cwd()) / PROJECT_DIR / "packs"

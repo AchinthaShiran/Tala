@@ -1,4 +1,4 @@
-"""Backend health checks used by ``lpa doctor`` and at start-up."""
+"""Backend health checks used by the ``doctor`` command and at start-up."""
 
 from __future__ import annotations
 

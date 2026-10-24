@@ -1,7 +1,7 @@
 """Trust decisions for project-local packs.
 
 A pack defines what may run on this machine and how risky it is claimed to be, so packs found in a
-repository the user merely opened (``./.assistant/packs``) must not load until the user trusts that
+repository the user merely opened (the project pack directory) must not load until the user trusts that
 directory. User-level packs and the builtin packs are always trusted.
 """
 
