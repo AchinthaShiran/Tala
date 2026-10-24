@@ -79,3 +79,9 @@ def test_user_pack_dir_extends_the_assistant(monkeypatch, tmp_path: Path):
 def test_audit_with_no_entries(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("ASSISTANT_HOME", str(tmp_path))
     assert "No audit entries" in runner.invoke(cli_app.app, ["audit"]).output
+
+
+def test_validate_prints_the_error_text_not_just_counts(tmp_path: Path):
+    (tmp_path / "bad.yaml").write_text("pack: x\ntools: [unclosed", encoding="utf-8")
+    result = runner.invoke(cli_app.app, ["packs", "validate", str(tmp_path)])
+    assert result.exit_code == 1 and "[error]" in result.output and "bad.yaml" in result.output

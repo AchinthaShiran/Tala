@@ -3,7 +3,7 @@ version: 1.0.0
 description: Look at folders on this computer (read-only).
 tools:
   - name: list_directory
-    description: List the files and folders inside a directory on this computer, for example the downloads or documents folder (Windows output is a recursive tree).
+    description: "List the files and sub-folders inside a given folder, for example the downloads or documents folder (Windows output is a recursive tree). It never tells you where you are; the current_directory tool does that."
     risk: read_only
     category: files
     keywords: [folder, directory, files, ls, dir, contents, tree, downloads, documents, desktop]
@@ -15,8 +15,7 @@ tools:
     parameters:
       path:
         type: string
-        description: Directory path, e.g. C:\Users\me\Downloads or /home/me; use . for the current directory
-        default: .
+        description: Folder to list, e.g. C:\Users\me\Downloads, /home/me, or . for the current folder
         max_length: 260
     run:
       windows: {exe: tree, args: [/A, /F, "{path}"]}

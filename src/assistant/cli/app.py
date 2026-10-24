@@ -246,7 +246,7 @@ def packs_validate(
         if issue.severity is Severity.INFO:
             continue
         style = "red" if issue.severity is Severity.ERROR else "yellow"
-        console.print(f"[{style}]{issue}[/{style}]")
+        console.print(escape(str(issue)), style=style)
     console.print(
         f"{len(report.tools)} tools loaded, {len(report.errors)} errors, {len(report.warnings)} warnings"
     )
