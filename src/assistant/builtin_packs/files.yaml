@@ -9,12 +9,14 @@ tools:
     keywords: [folder, directory, files, ls, dir, contents, tree, downloads, documents, desktop]
     examples:
       - what is in my downloads folder
+      - list the files here
       - list the files in C:\Users
       - show the contents of /var/log
     parameters:
       path:
         type: string
-        description: Directory path, e.g. C:\Users\me\Downloads or /home/me
+        description: Directory path, e.g. C:\Users\me\Downloads or /home/me; use . for the current directory
+        default: .
         max_length: 260
     run:
       windows: {exe: tree, args: [/A, /F, "{path}"]}

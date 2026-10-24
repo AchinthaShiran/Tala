@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -82,7 +83,10 @@ class AgentNodes:
         override = self._d.settings.agents[agent].prompt
         facts = self._d.facts.render() if self._d.facts else ""
         text = prompts.with_context(
-            override or prompts.DEFAULTS[agent], os_name=self._d.os_name, facts=facts
+            override or prompts.DEFAULTS[agent],
+            os_name=self._d.os_name,
+            cwd=os.getcwd(),
+            facts=facts,
         )
         return SystemMessage(content=text)
 

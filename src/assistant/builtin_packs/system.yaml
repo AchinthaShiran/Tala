@@ -130,3 +130,20 @@ tools:
       - what is my username
     run:
       any: {exe: whoami}
+
+  - name: current_directory
+    description: Show the current working directory, the folder the assistant was started in (the terminal's directory).
+    risk: read_only
+    category: files
+    keywords: [current directory, working directory, cwd, pwd, folder, here, terminal, path]
+    examples:
+      - what is the current directory
+      - which folder am I in
+      - print the working directory
+      - where am I in the terminal
+    run:
+      windows:
+        exe: powershell
+        args: [-NoProfile, -NonInteractive, -Command, "(Get-Location).Path"]
+      linux: {exe: pwd}
+      macos: {exe: pwd}

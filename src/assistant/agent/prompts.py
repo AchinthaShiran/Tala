@@ -47,9 +47,10 @@ DEFAULTS = {
 }
 
 
-def with_context(prompt: str, *, os_name: str, facts: str = "") -> str:
+def with_context(prompt: str, *, os_name: str, cwd: str = "", facts: str = "") -> str:
     """Append environment facts that every agent benefits from."""
-    parts = [prompt, f"\nEnvironment: {os_name}. Today is {date.today().isoformat()}."]
+    where = f" Working directory (the user's terminal is here): {cwd}." if cwd else ""
+    parts = [prompt, f"\nEnvironment: {os_name}. Today is {date.today().isoformat()}.{where}"]
     if facts:
         parts.append(f"Known facts about the user:\n{facts}")
     return "\n".join(parts)

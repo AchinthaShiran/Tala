@@ -32,6 +32,8 @@ cases:
   - {query: which devices are on my local network, expect: arp_table}
   - {query: show the routing table, expect: routing_table}
   - {query: what is my mac address, expect: mac_addresses}
+  - {query: what is the current directory, expect: current_directory}
+  - {query: which folder am I in, expect: current_directory}
   - {query: list the files in my downloads folder, expect: list_directory}
   - {query: git status of this repo, expect: git_status}
   - {query: what changed in my repository, expect: [git_status, git_diff]}

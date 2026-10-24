@@ -325,3 +325,12 @@ def test_state_is_reset_between_turns(make_harness):
     assert events[-1].text == "second"
     values = h.assistant._graph.get_state({"configurable": {"thread_id": SESSION}}).values
     assert values["steps"] == 0 and values["untrusted_seen"] is False
+
+
+def test_prompts_tell_the_model_the_working_directory(make_harness):
+    import os
+
+    h = make_harness({"chat": ["ok"]})
+    run(h, "hello there")
+    system = h.models["chat"].prompts[0][0].content
+    assert os.getcwd() in system
