@@ -7,16 +7,24 @@ for you if neither is present) and then start the setup wizard.
 
 ```powershell
 # Windows (PowerShell)
-irm <URL-of-install.ps1> | iex
+irm https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.ps1 | iex
 ```
 
 ```sh
 # macOS / Linux
-curl -fsSL <URL-of-install.sh> | sh
+curl -fsSL https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.sh | sh
 ```
 
-Replace the placeholders with wherever you host the two files (for example the raw file URLs of your
-repository). Both scripts need Python 3.11 or newer only when neither `uv` nor `pipx` is installed.
+Or install the package yourself (any of these; each gives you the `tala` command):
+
+```sh
+pipx install tala-ai          # recommended
+uv tool install tala-ai
+pip install tala-ai           # into the current environment
+```
+
+Python **3.11 or newer** is required (not a specific version). `uv` can fetch a suitable Python for you
+and the installer scripts look for one; with `pipx` use `--python python3.12` if your default is older.
 
 | Variable | Effect |
 | --- | --- |

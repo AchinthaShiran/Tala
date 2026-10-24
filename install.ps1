@@ -1,12 +1,12 @@
 # One-line installer for Windows (PowerShell):
-#   irm <URL-of-this-file> | iex
+#   irm https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.ps1 | iex
 #
 # Installs the app in its own isolated environment (uv or pipx), then starts the setup wizard.
 # Rebranding: change the variables below (they mirror src/assistant/domain/branding.py).
 $AppName = "Tala"
 $Command = "tala"
 $EnvPrefix = "TALA"
-$DefaultPackage = "tala-assistant"
+$DefaultPackage = "tala-ai"
 $MinPython = [version]"3.11"
 
 function Get-Setting([string]$Suffix) {

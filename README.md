@@ -35,11 +35,18 @@ You need [Ollama](https://ollama.com/download) running locally.
 **One-line install** (installs into an isolated environment, then starts the setup wizard):
 
 ```powershell
-irm <URL-of-install.ps1> | iex                  # Windows
+irm https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.ps1 | iex   # Windows
 ```
 
 ```sh
-curl -fsSL <URL-of-install.sh> | sh             # macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.sh | sh   # macOS / Linux
+```
+
+**Or from PyPI** (needs Python 3.11 or newer, not a specific version):
+
+```sh
+pipx install tala-ai      # or: uv tool install tala-ai
+tala setup
 ```
 
 **From a clone:**
@@ -167,4 +174,11 @@ CI runs all of the above on Windows, Linux and macOS (`.github/workflows/ci.yml`
 - Small models (2-4B) make mistakes. Measure with `tala eval agent` before trusting a model, and keep
   mutating tools on `ask`.
 
-See [CHANGELOG](CHANGELOG.md) and the decision records in [.10x/adrs](.10x/adrs).
+See [CHANGELOG](CHANGELOG.md) and the decision records in [.10x/adrs](.10x/adrs). Maintainers: releasing
+is described in [docs/publishing.md](docs/publishing.md).
+
+## License
+
+Copyright 2026 Achintha Bandara. Licensed under the [Apache License, Version 2.0](LICENSE): you may use,
+modify and distribute it, including commercially, as long as you keep the copyright and [NOTICE](NOTICE)
+files and state significant changes. It includes an explicit patent grant and comes with no warranty.
