@@ -68,26 +68,56 @@ def test_check_shows_hardware_and_recommendation_without_writing(env: Path):
     assert not env.exists()
 
 
-def test_default_setup_writes_a_valid_minimal_config(env: Path):
+def test_default_setup_writes_the_fixed_baseline(env: Path):
     result = invoke("--default", "--yes", "--no-pull")
     assert result.exit_code == 0, result.output
     assert env.exists() and "All required models are already downloaded" in result.output
-    data = yaml.safe_load(env.read_text(encoding="utf-8"))
-    assert data["models"]["router"]["name"] == "gemma4:e2b"  # shares the main model on CPU
+    assert "Default setup: these settings will be applied." in result.output
     settings = load_settings(env, env={})
-    assert settings.models["main"].name == "gemma4:e2b" and settings.embeddings is not None
+    assert (
+        settings.models["main"].name == "gemma4:e2b" and settings.models["main"].keep_alive == "5m"
+    )
+    assert settings.models["router"].name == "gemma4:e2b"  # the main model also routes
+    assert settings.embeddings is not None and settings.embeddings.name == "nomic-embed-text"
+    assert settings.models["main"].num_ctx == 8192
+
+
+def test_recommended_setup_writes_hardware_tailored_settings(env: Path):
+    result = invoke("--recommended", "--yes", "--no-pull")
+    assert result.exit_code == 0, result.output
+    assert "Recommended setup: these settings will be applied." in result.output
+    settings = load_settings(env, env={})
+    assert settings.models["main"].keep_alive == "30m"  # 15.7 GB RAM: no need to unload early
+    assert settings.models["main"].name == "gemma4:e2b"
+
+
+def test_menu_lists_three_setups_and_preselects_recommended(env: Path):
+    result = invoke(input="\ny\n")  # Enter accepts the preselected option, y saves
+    assert result.exit_code == 0, result.output
+    for text in ("Default setup", "Recommended for this machine", "Advanced setup"):
+        assert text in result.output
+    assert "Recommended setup: these settings will be applied." in result.output
+    assert load_settings(env, env={}).models["main"].keep_alive == "30m"
 
 
 def test_interactive_menu_default_choice(env: Path):
     result = invoke(input="1\ny\n")  # 1 = default setup, y = save
     assert result.exit_code == 0, result.output
-    assert "How would you like to set up?" in result.output and env.exists()
+    assert "Default setup: these settings will be applied." in result.output
+    assert load_settings(env, env={}).models["main"].keep_alive == "5m"
 
 
-def test_declining_the_final_prompt_changes_nothing(env: Path):
-    result = invoke(input="1\nn\n")
+def test_declining_changes_nothing(env: Path):
+    result = invoke(input="1\nn\nn\n")  # default, refuse the settings, refuse another setup
     assert result.exit_code == 1 and "Nothing was changed" in result.output
     assert not env.exists()
+
+
+def test_declining_the_settings_lets_you_pick_another_setup(env: Path):
+    result = invoke(input="1\nn\ny\n2\ny\n")  # default -> refuse -> another -> recommended -> save
+    assert result.exit_code == 0, result.output
+    assert result.output.count("these settings will be applied") == 2
+    assert load_settings(env, env={}).models["main"].keep_alive == "30m"
 
 
 def test_existing_config_is_merged_and_backed_up(env: Path):
@@ -143,6 +173,8 @@ def test_problems_found_after_setup_are_listed(env: Path, monkeypatch):
 
 def test_conflicting_flags_are_rejected(env: Path):
     assert invoke("--default", "--advanced").exit_code == 1
+    assert invoke("--default", "--recommended").exit_code == 1
+    assert invoke("--recommended", "--advanced").exit_code == 1
     both = invoke("--advanced", "--yes")
     assert both.exit_code == 1 and "interactive" in both.output
     assert not env.exists()

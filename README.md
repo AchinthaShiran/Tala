@@ -51,16 +51,18 @@ tala setup           # pick Default or Advanced; detects your hardware and warns
 tala chat            # start talking
 ```
 
-`tala setup` offers a **default** setup (recommended for your hardware, nothing to decide) or an
-**advanced** one (choose models, context size, memory use, approval rules and speed options from curated
-sets, with warnings when a choice will strain your machine). It also offers itself the first time you run
-`tala chat`. Details: [docs/setup.md](docs/setup.md). `tala doctor` re-checks everything at any time.
+`tala setup` offers three setups: **Default** (one fixed, conservative configuration, the same everywhere),
+**Recommended** (tailored to your detected hardware) and **Advanced** (choose models, context size, memory
+use, approval rules and speed options from curated sets, with warnings when a choice will strain your
+machine). Whichever you pick, the full settings are shown and you confirm before anything is applied. It
+also offers itself the first time you run `tala chat`. Details: [docs/setup.md](docs/setup.md).
+`tala doctor` re-checks everything at any time.
 
 Other commands:
 
 | Command | Purpose |
 | --- | --- |
-| `tala setup [--default\|--advanced] [--check]` | First-run wizard: hardware-aware setup and model downloads |
+| `tala setup [--default\|--recommended\|--advanced] [--check]` | First-run wizard: hardware-aware setup and model downloads |
 | `tala ask "..."` | One question, then exit |
 | `tala packs list [--all]` | Tools available here (and why others are not) |
 | `tala packs show NAME` | Full definition of a tool |

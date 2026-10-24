@@ -15,7 +15,14 @@ from assistant.setup.choices import (
     minimal_overrides,
 )
 from assistant.setup.hardware import Hardware, detect_hardware
-from assistant.setup.planner import Advice, assess, estimate_memory_gb, recommend, recommend_tier
+from assistant.setup.planner import (
+    Advice,
+    assess,
+    baseline,
+    estimate_memory_gb,
+    recommend,
+    recommend_tier,
+)
 from assistant.setup.wizard import Option, Prompter, run_wizard, summary_lines
 
 __all__ = [
@@ -28,6 +35,7 @@ __all__ = [
     "Prompter",
     "SetupChoices",
     "assess",
+    "baseline",
     "build_settings",
     "detect_hardware",
     "estimate_memory_gb",

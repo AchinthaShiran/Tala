@@ -89,23 +89,39 @@ def _recommendation_line(hw: Hardware, rec: SetupChoices) -> str:
     return f"Recommended for this machine: {rec.main.label} ({reason})."
 
 
-def _pick_mode(p: Prompter, rec: SetupChoices) -> str:
+def _compact(c: SetupChoices) -> str:
+    """One line with the values that matter, so each option can be judged before it is picked."""
+    router = "the main model also routes" if c.router is None else f"{c.router.label} routes"
+    embeddings = c.embeddings.label if c.embeddings else "keyword search"
+    return (
+        f"{c.main.label}; {router}; {embeddings}; {c.num_ctx} tokens; "
+        f"keep loaded {c.keep_alive}; about {estimate_memory_gb(c):.1f} GB"
+    )
+
+
+def _pick_mode(p: Prompter, base: SetupChoices, rec: SetupChoices) -> str:
+    same = " (same as the default setup)" if rec == base else ""
     return p.choose(
-        "How would you like to set up?",
+        "How would you like to set up? You will see the full settings and confirm before "
+        "anything is applied.",
         [
             Option(
                 "default",
-                "Default setup (recommended)",
-                f"{rec.main.label}, safe approval rules, tuned for speed. About "
-                f"{estimate_memory_gb(rec):.1f} GB of memory.",
+                "Default setup",
+                f"The same on every machine: {_compact(base)}.",
+            ),
+            Option(
+                "recommended",
+                f"Recommended for this machine{same}",
+                f"Tailored to the detected hardware: {_compact(rec)}.",
             ),
             Option(
                 "advanced",
                 "Advanced setup",
-                "Choose models, context size, memory use, safety rules and speed options yourself.",
+                "Choose models, context size, memory use, approval rules and speed options yourself.",
             ),
         ],
-        default=0,
+        default=1,
     )
 
 
@@ -296,8 +312,8 @@ def summary_lines(choices: SetupChoices) -> list[str]:
     ]
 
 
-def _review(p: Prompter, hw: Hardware, choices: SetupChoices) -> bool:
-    p.say("Your configuration:")
+def _review(p: Prompter, hw: Hardware, choices: SetupChoices, title: str) -> bool:
+    p.say(f"{title}: these settings will be applied.")
     for line in summary_lines(choices):
         p.say("  " + line)
     advice: list[Advice] = assess(choices, hw)

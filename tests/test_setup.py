@@ -18,6 +18,7 @@ from assistant.setup import (
     Option,
     SetupChoices,
     assess,
+    baseline,
     build_settings,
     detect_hardware,
     estimate_memory_gb,
@@ -366,21 +367,103 @@ class ScriptedPrompter:
         return not self._answers
 
 
-def test_default_mode_asks_only_for_final_confirmation():
+def test_default_setup_is_the_fixed_baseline_on_every_machine():
+    expected = SetupChoices(
+        main=tag("gemma4:e2b"),
+        router=None,
+        embeddings=tag("nomic-embed-text"),
+        num_ctx=8192,
+        keep_alive="5m",
+        safety="default",
+        fast_path=True,
+        direct_output=False,
+        audit_log=True,
+    )
+    assert baseline(CATALOG) == expected
+    for hardware in (CPU_16, CPU_4, GPU_24, MAC_32):
+        p = ScriptedPrompter(True)
+        assert run_wizard(p, hardware, CATALOG, mode="default") == expected
+    assert estimate_memory_gb(expected) == pytest.approx(6.2)
+
+
+def test_default_mode_shows_the_settings_and_asks_before_applying():
     p = ScriptedPrompter(True)
-    choices = run_wizard(p, CPU_16, CATALOG, mode="default")
-    assert choices == recommend(CPU_16, CATALOG) and p.finished
-    assert any("Recommended for this machine" in line for line in p.said)
+    run_wizard(p, CPU_16, CATALOG, mode="default")
+    assert p.questions == ["Save this configuration?"] and p.finished
+    said = "\n".join(p.said)
+    assert "Default setup: these settings will be applied." in said
+    assert "Main model:        Gemma 4 E2B (gemma4:e2b)" in said
+    assert "Routing model:     same as main model" in said
+    assert "Keep loaded:       5m" in said and "Estimated memory:  about 6.2 GB" in said
 
 
-def test_ask_mode_offers_default_or_advanced():
-    p = ScriptedPrompter("default", True)
+def test_recommended_setup_is_tailored_to_the_hardware():
+    p = ScriptedPrompter(True)
+    chosen = run_wizard(p, GPU_24, CATALOG, mode="recommended")
+    assert chosen == recommend(GPU_24, CATALOG) and chosen.main.tier == "heavy"
+    assert chosen != baseline(CATALOG)
+    assert any("Recommended setup: these settings will be applied." in line for line in p.said)
+    assert p.questions == ["Save this configuration?"]
+    assert run_wizard(ScriptedPrompter(True), CPU_4, CATALOG, mode="recommended").num_ctx == 4096
+
+
+def test_recommendation_adapts_memory_behaviour_to_the_machine():
+    assert recommend(CPU_4, CATALOG).keep_alive == "5m"  # free memory sooner on small machines
+    assert recommend(CPU_16, CATALOG).keep_alive == "30m"
+    assert recommend(GPU_12, CATALOG).keep_alive == "30m"
+
+
+def test_ask_mode_menu_has_three_setups_with_recommended_preselected():
+    seen: dict[str, Any] = {}
+
+    class Spy(ScriptedPrompter):
+        def choose(self, question, options, default=0):
+            seen.setdefault("first", (question, list(options), default))
+            return super().choose(question, options, default)
+
+    p = Spy("recommended", True)
     assert run_wizard(p, CPU_16, CATALOG, mode="ask") == recommend(CPU_16, CATALOG)
-    assert p.questions[0] == "How would you like to set up?"
+    question, options, default = seen["first"]
+    assert [o.key for o in options] == ["default", "recommended", "advanced"]
+    assert options[default].key == "recommended"
+    assert "confirm" in question
+    assert "Gemma 4 E2B" in options[0].detail and "keep loaded 5m" in options[0].detail
+    assert "keep loaded 30m" in options[1].detail  # the recommended one shows its own values
 
 
-def test_declining_the_review_cancels():
-    assert run_wizard(ScriptedPrompter(False), CPU_16, CATALOG, mode="default") is None
+def test_menu_says_when_the_recommendation_equals_the_default():
+    captured: list[Option] = []
+
+    class Spy(ScriptedPrompter):
+        def choose(self, question, options, default=0):
+            captured.extend(options)
+            return super().choose(question, options, default)
+
+    hardware_matching_default = Hardware("Linux", ram_gb=8.0, cpu_threads=4)
+    assert recommend(hardware_matching_default, CATALOG) == baseline(CATALOG)
+    run_wizard(Spy("default", True), hardware_matching_default, CATALOG, mode="ask")
+    assert "same as the default setup" in captured[1].label
+
+
+@pytest.mark.parametrize("mode_choice", ["default", "recommended"])
+def test_every_setup_requires_acceptance_before_applying(mode_choice):
+    accepted = run_wizard(ScriptedPrompter(mode_choice, True), CPU_16, CATALOG, mode="ask")
+    assert accepted is not None
+    refused = ScriptedPrompter(mode_choice, False, False)  # decline, and decline another setup
+    assert run_wizard(refused, CPU_16, CATALOG, mode="ask") is None and refused.finished
+
+
+def test_declining_in_the_menu_flow_offers_a_different_setup():
+    p = ScriptedPrompter("default", False, True, "recommended", True)
+    chosen = run_wizard(p, CPU_16, CATALOG, mode="ask")
+    assert chosen == recommend(CPU_16, CATALOG) and p.finished
+    assert "Choose a different setup?" in p.questions
+
+
+def test_declining_an_explicit_mode_cancels_without_a_second_chance():
+    for mode in ("default", "recommended"):
+        p = ScriptedPrompter(False)
+        assert run_wizard(p, CPU_16, CATALOG, mode=mode) is None and p.finished
 
 
 def test_advanced_mode_applies_every_choice():

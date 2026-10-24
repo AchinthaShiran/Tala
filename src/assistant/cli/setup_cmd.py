@@ -15,6 +15,7 @@ from assistant.domain import ConfigError
 from assistant.domain.branding import APP_NAME, cmd
 from assistant.llm import check_backend
 from assistant.setup import (
+    baseline,
     build_settings,
     detect_hardware,
     estimate_memory_gb,
@@ -48,12 +49,17 @@ def run_setup(
     catalog = load_catalog()
 
     if check_only:
-        recommended = recommend(hardware, catalog)
         console.print(f"Detected: {escape(hardware.describe())}")
-        console.print("Recommended configuration:")
-        for line in summary_lines(recommended):
-            console.print("  " + escape(line))
-        console.print(f"Run [bold]{cmd('setup')}[/bold] to apply it.")
+        for title, preview in (
+            ("Default setup (same on every machine)", baseline(catalog)),
+            ("Recommended setup (tailored to this machine)", recommend(hardware, catalog)),
+        ):
+            console.print(f"\n[bold]{title}[/bold]")
+            for line in summary_lines(preview):
+                console.print("  " + escape(line))
+        console.print(
+            f"\nRun [bold]{cmd('setup')}[/bold] to choose one; nothing is applied without confirmation."
+        )
         return 0
 
     console.print(f"[bold]{APP_NAME} setup[/bold]")

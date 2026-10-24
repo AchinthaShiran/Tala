@@ -457,13 +457,16 @@ def eval_agent(
 @app.command()
 def setup(
     default: Annotated[
-        bool, typer.Option("--default", help="Use the recommended setup without asking")
+        bool, typer.Option("--default", help="Default setup: the same fixed settings everywhere")
+    ] = False,
+    recommended: Annotated[
+        bool, typer.Option("--recommended", help="Recommended setup: tailored to this hardware")
     ] = False,
     advanced: Annotated[
         bool, typer.Option("--advanced", help="Choose models and options yourself")
     ] = False,
     yes: Annotated[
-        bool, typer.Option("--yes", "-y", help="Accept the default answer to every question")
+        bool, typer.Option("--yes", "-y", help="Accept the settings shown without asking")
     ] = False,
     pull: Annotated[
         bool | None,
@@ -474,12 +477,20 @@ def setup(
     ] = False,
     config: ConfigOpt = None,
 ) -> None:
-    """First-run wizard: pick a default or advanced setup and write the configuration."""
-    if default and advanced:
-        raise _fail("choose either --default or --advanced, not both")
+    """First-run wizard: default, recommended or advanced setup; always confirmed before applying."""
+    if sum((default, recommended, advanced)) > 1:
+        raise _fail("choose only one of --default, --recommended and --advanced")
     if advanced and yes:
-        raise _fail("advanced setup is interactive; drop --yes or use --default")
-    mode: Mode = "default" if default else "advanced" if advanced else "ask"
+        raise _fail("advanced setup is interactive; drop --yes or use --default/--recommended")
+    mode: Mode = (
+        "default"
+        if default
+        else "recommended"
+        if recommended
+        else "advanced"
+        if advanced
+        else "ask"
+    )
     _, paths = _load(config)
     code = run_setup(
         console,

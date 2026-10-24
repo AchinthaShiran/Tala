@@ -31,10 +31,11 @@ You also need [Ollama](https://ollama.com/download) running locally. The wizard 
 ## The setup wizard
 
 ```
-tala setup                 # choose Default or Advanced interactively
-tala setup --default       # recommended settings, no questions except the final confirmation
+tala setup                 # choose Default, Recommended or Advanced interactively
+tala setup --default       # the fixed default settings (shown, then confirmed)
+tala setup --recommended   # settings tailored to this hardware (shown, then confirmed)
 tala setup --advanced      # pick everything yourself
-tala setup --check         # show detected hardware and the recommendation, change nothing
+tala setup --check         # show detected hardware plus the Default and Recommended settings, change nothing
 ```
 
 The wizard also offers itself once, automatically, the first time you run `tala chat` or `tala ask`
@@ -46,19 +47,48 @@ RAM, CPU threads and an NVIDIA GPU with its memory (via `nvidia-smi`); Apple Sil
 unified memory. Detection is best-effort and never fails: anything unknown is reported as unknown and
 the advice becomes conservative.
 
-### Default setup
+### Three setups, always confirmed
 
-Picks a model tier for your hardware and shows exactly what it will do before saving anything.
+| Setup | What it is |
+| --- | --- |
+| **Default** | One fixed, conservative configuration, **the same on every machine** (below) |
+| **Recommended** | Tailored to the detected hardware |
+| **Advanced** | You choose each option from curated sets |
 
-| Hardware | Recommended |
+Whichever you pick, the wizard prints the **full settings** (and any warnings) and asks you to accept
+them **before anything is applied**. If you decline you can pick a different setup instead of starting
+over. The menu itself shows each option's key values so you can compare them first, and pre-selects
+Recommended. With `--yes` the settings are still printed, but accepted automatically.
+
+#### Default setup
+
+| Setting | Value |
+| --- | --- |
+| Main model | Gemma 4 E2B (`gemma4:e2b`) |
+| Routing model | Same as the main model |
+| Embeddings | `nomic-embed-text` |
+| Context size | 8192 tokens |
+| Keep loaded | 5 minutes |
+| Approval rules | Default (read-only runs, changes ask, destructive needs the tool name typed) |
+| Fast path | On |
+| Direct output | Off |
+| Command log | On |
+| Estimated memory | About 6.2 GB with everything loaded |
+
+#### Recommended setup
+
+Starts from the same shape but adapts to the machine:
+
+| Hardware | Model recommended |
 | --- | --- |
 | No GPU (any amount of RAM) | **Light**: Gemma 4 E2B. On a CPU even small models answer in seconds, so larger ones mostly make things slower |
 | GPU or Apple Silicon with roughly 10 GB or more usable | **Balanced**: Gemma 4 E4B |
 | 24 GB or more usable | **Heavy**: GPT-OSS 20B |
 
-Embeddings (`nomic-embed-text`) are included for accurate tool search. A separate routing model is only
-recommended with real acceleration and 16 GB or more, because it costs resident memory and is
-consulted rarely; otherwise the main model also does routing.
+Other settings adapt too: a separate routing model only with real acceleration and 16 GB or more (it
+costs resident memory and is consulted rarely); a 4096-token context below 8 GB of RAM; models unloaded
+after 5 minutes instead of 30 when RAM is under 12 GB. On some machines the recommendation equals the
+default, and the menu says so.
 
 ### Advanced setup
 
@@ -101,7 +131,7 @@ Memory figures are estimates (weights plus an approximate context cache), meant 
 
 | Option | Meaning |
 | --- | --- |
-| `--default` / `--advanced` | Skip the first question (mutually exclusive) |
+| `--default` / `--recommended` / `--advanced` | Skip the first question (mutually exclusive) |
 | `--yes`, `-y` | Accept the default answer to every question (advanced setup is interactive and rejects it) |
 | `--pull` / `--no-pull` | Download missing models / do not (default: ask) |
 | `--check` | Show hardware and recommendation only |
