@@ -1,0 +1,152 @@
+pack: languages
+version: 1.0.0
+description: .NET, Go, Rust and Ruby.
+tools:
+- name: dotnet_version
+  description: Show the installed .NET SDK version.
+  risk: read_only
+  category: dotnet
+  keywords: [dotnet, .net, csharp, c#, version]
+  examples: [what dotnet version do I have, dotnet version]
+  run:
+    any:
+      exe: dotnet
+      args: [--version]
+- name: dotnet_sdks
+  description: List the installed .NET SDKs.
+  risk: read_only
+  category: dotnet
+  keywords: [dotnet, .net, sdk, installed]
+  examples: [list installed dotnet sdks, which .net sdks are installed]
+  run:
+    any:
+      exe: dotnet
+      args: [--list-sdks]
+- name: dotnet_build
+  description: Build the .NET project or solution in the current folder.
+  risk: mutating
+  category: dotnet
+  keywords: [dotnet, build, compile, csharp, c#]
+  examples: [dotnet build, build the c# project]
+  timeout: 900
+  run:
+    any:
+      exe: dotnet
+      args: [build, --nologo]
+- name: dotnet_test
+  description: Run the tests of the .NET project in the current folder.
+  risk: mutating
+  category: dotnet
+  keywords: [dotnet, test, run tests, csharp, c#, xunit, nunit]
+  examples: [dotnet test, run the c# tests]
+  timeout: 1200
+  run:
+    any:
+      exe: dotnet
+      args: [test, --nologo]
+- name: go_version
+  description: Show the installed Go version.
+  risk: read_only
+  category: go
+  keywords: [go, golang, version]
+  examples: [what go version do I have, go version]
+  run:
+    any:
+      exe: go
+      args: [version]
+- name: go_build
+  description: Build the Go packages in the current folder.
+  risk: mutating
+  category: go
+  keywords: [go, golang, build, compile]
+  examples: [go build, build the go project]
+  timeout: 900
+  run:
+    any:
+      exe: go
+      args: [build, ./...]
+- name: go_test
+  description: Run the Go tests in the current folder.
+  risk: mutating
+  category: go
+  keywords: [go, golang, test, run tests]
+  examples: [go test, run the go tests]
+  timeout: 1200
+  run:
+    any:
+      exe: go
+      args: [test, ./...]
+- name: go_mod_tidy
+  description: Add missing and remove unused Go module dependencies (go mod tidy).
+  risk: mutating
+  category: go
+  keywords: [go, golang, mod tidy, dependencies, modules]
+  examples: [go mod tidy, tidy the go modules]
+  timeout: 300
+  run:
+    any:
+      exe: go
+      args: [mod, tidy]
+- name: cargo_version
+  description: Show the installed Rust (cargo) version.
+  risk: read_only
+  category: rust
+  keywords: [rust, cargo, rustc, version]
+  examples: [what rust version do I have, cargo version]
+  run:
+    any:
+      exe: cargo
+      args: [--version]
+- name: cargo_check
+  description: Check a Rust project for errors without producing a binary.
+  risk: mutating
+  category: rust
+  keywords: [rust, cargo, check, compile errors]
+  examples: [cargo check, check the rust project for errors]
+  timeout: 900
+  run:
+    any:
+      exe: cargo
+      args: [check]
+- name: cargo_build
+  description: Build the Rust project in the current folder.
+  risk: mutating
+  category: rust
+  keywords: [rust, cargo, build, compile]
+  examples: [cargo build, build the rust project]
+  timeout: 1800
+  run:
+    any:
+      exe: cargo
+      args: [build]
+- name: cargo_test
+  description: Run the tests of the Rust project in the current folder.
+  risk: mutating
+  category: rust
+  keywords: [rust, cargo, test, run tests]
+  examples: [cargo test, run the rust tests]
+  timeout: 1800
+  run:
+    any:
+      exe: cargo
+      args: [test]
+- name: ruby_version
+  description: Show the installed Ruby version.
+  risk: read_only
+  category: ruby
+  keywords: [ruby, version, gem]
+  examples: [what ruby version do I have, ruby version]
+  run:
+    any:
+      exe: ruby
+      args: [--version]
+- name: gem_list
+  description: List the installed Ruby gems.
+  risk: read_only
+  category: ruby
+  keywords: [ruby, gem, gems, installed, bundler]
+  examples: [which ruby gems are installed, gem list]
+  run:
+    any:
+      exe: gem
+      args: [list]

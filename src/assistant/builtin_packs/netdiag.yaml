@@ -1,0 +1,76 @@
+pack: netdiag
+version: 1.0.0
+description: Network diagnostics beyond ping and DNS.
+tools:
+- name: port_check
+  description: Check whether a TCP port on a host is reachable (open) from this computer.
+  risk: read_only
+  category: network
+  keywords: [port, open, reachable, tcp, test connection, telnet, nc, firewall, connect]
+  examples: [is port 443 open on example.com, can I reach 192.168.1.10 on port 22, check if port 5432
+      is open on localhost]
+  timeout: 45
+  parameters:
+    host: {type: string, description: Host name or IP address, pattern: '^[A-Za-z0-9._:-]+$', max_length: 253}
+    port: {type: integer, description: TCP port number, minimum: 1, maximum: 65535}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Test-NetConnection -ComputerName ''{host}'' -Port
+          {port} | Format-List ComputerName,RemotePort,TcpTestSucceeded']
+    linux:
+      exe: nc
+      args: [-z, -v, -w, '5', '{host}', '{port}']
+    macos:
+      exe: nc
+      args: [-z, -v, -w, '5', '{host}', '{port}']
+- name: wifi_status
+  description: 'Show the current Wi-Fi connection: network name, signal strength and security (nearby
+    networks on Linux).'
+  risk: read_only
+  category: network
+  keywords: [wifi, wi-fi, wireless, ssid, signal, network name, connected to]
+  examples: [which wifi am I connected to, how strong is my wifi signal, show the wi-fi status]
+  run:
+    windows:
+      exe: netsh
+      args: [wlan, show, interfaces]
+    linux:
+      exe: nmcli
+      args: [-f, 'IN-USE,SSID,SIGNAL,SECURITY', device, wifi, list]
+    macos:
+      exe: networksetup
+      args: [-getairportnetwork, en0]
+- name: flush_dns
+  description: Clear the DNS resolver cache of this computer.
+  risk: mutating
+  category: network
+  keywords: [dns, flush, cache, clear dns, resolver, ipconfig /flushdns]
+  examples: [flush the dns cache, clear my dns cache]
+  run:
+    windows:
+      exe: ipconfig
+      args: [/flushdns]
+    linux:
+      exe: resolvectl
+      args: [flush-caches]
+    macos:
+      exe: dscacheutil
+      args: [-flushcache]
+- name: dns_servers
+  description: Show which DNS servers this computer is using.
+  risk: read_only
+  category: network
+  keywords: [dns, dns servers, nameserver, resolver, resolv]
+  examples: [which dns servers am I using, show my dns settings]
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-DnsClientServerAddress -AddressFamily IPv4 |
+          Format-Table InterfaceAlias,ServerAddresses']
+    linux:
+      exe: resolvectl
+      args: [status]
+    macos:
+      exe: scutil
+      args: [--dns]

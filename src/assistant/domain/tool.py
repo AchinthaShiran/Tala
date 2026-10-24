@@ -127,6 +127,8 @@ class ToolSpec(_Frozen):
     max_output_bytes: int = Field(default=64_000, ge=1_000, le=4_000_000)
     output_encoding: str = "utf-8"
     confirm_message: str | None = None
+    # Content-heavy output (pages, files, logs): summarise it, then offer the verbatim text.
+    offer_original: bool = False
     # Filled in by the loader:
     pack: str = ""
     source: str = ""

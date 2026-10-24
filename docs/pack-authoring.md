@@ -31,6 +31,7 @@ tools:
     max_output_bytes: 64000 # default 64000
     output_encoding: utf-8  # or e.g. cp850; `oem` = Windows console code page
     confirm_message: ...    # required when risk is destructive
+    offer_original: false   # true for pages, files and logs: summarise, then offer the verbatim output
     parameters:
       host:
         type: string        # string | integer | number | boolean
@@ -107,6 +108,14 @@ The model fills parameters; treat every value as untrusted.
 
 When unsure, choose the higher level. A user can relax or tighten per tool/pack in `config.yaml`, but
 destructive tools can never be made automatic.
+
+### Content-heavy output (`offer_original`)
+
+For tools that return a lot of text (a web page, a file, a log), set `offer_original: true`. The assistant
+summarises the result, then ends with a fixed question: "Would you like to see the original output?". A short
+"yes" shows the stored output verbatim as its own message. This costs no extra model call, and the raw text is
+not added to the conversation, because tool output is untrusted and can be large. Any other message drops the
+offer. Users can turn this off with `runtime.offer_original_output: false`.
 
 ### Writing for retrieval
 

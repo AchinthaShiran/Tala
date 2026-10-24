@@ -1,0 +1,97 @@
+pack: github
+version: 1.0.0
+description: 'GitHub CLI (gh): pull requests, issues and workflow runs. Read-only.'
+tools:
+- name: gh_auth_status
+  description: Show whether the GitHub CLI is logged in and as whom.
+  risk: read_only
+  category: github
+  keywords: [github, gh, auth, logged in, login status]
+  examples: [am I logged in to github, gh auth status]
+  run:
+    any:
+      exe: gh
+      args: [auth, status]
+- name: gh_repo_view
+  description: 'Show the GitHub repository of the current folder: description, stars and default branch.'
+  risk: read_only
+  category: github
+  keywords: [github, gh, repo, repository, info]
+  examples: [show this github repository, gh repo view]
+  timeout: 45
+  run:
+    any:
+      exe: gh
+      args: [repo, view]
+- name: gh_pr_list
+  description: List pull requests of the GitHub repository in the current folder.
+  risk: read_only
+  category: github
+  keywords: [github, pull requests, prs, pr list, gh]
+  examples: [list open pull requests, show the merged pull requests]
+  timeout: 45
+  parameters:
+    state:
+      type: string
+      description: Which pull requests
+      default: open
+      enum: [open, closed, merged, all]
+  run:
+    any:
+      exe: gh
+      args: [pr, list, --limit, '20', --state, '{state}']
+- name: gh_pr_view
+  description: Show the details of one pull request.
+  risk: read_only
+  category: github
+  keywords: [github, pull request, pr, details, gh]
+  examples: [show pull request 42, what is pr 17 about]
+  timeout: 45
+  parameters:
+    number: &id001 {type: integer, description: Pull request number, minimum: 1, maximum: 1000000}
+  run:
+    any:
+      exe: gh
+      args: [pr, view, '{number}']
+  offer_original: true
+- name: gh_pr_checks
+  description: Show the CI check results of a pull request.
+  risk: read_only
+  category: github
+  keywords: [github, checks, ci, pull request, build status, actions]
+  examples: [did the checks pass on pr 42, show the ci status of pull request 9]
+  timeout: 45
+  parameters:
+    number: *id001
+  run:
+    any:
+      exe: gh
+      args: [pr, checks, '{number}']
+- name: gh_issue_list
+  description: List issues of the GitHub repository in the current folder.
+  risk: read_only
+  category: github
+  keywords: [github, issues, bugs, issue list, gh]
+  examples: [list open github issues, show the closed issues]
+  timeout: 45
+  parameters:
+    state:
+      type: string
+      description: Which items
+      default: open
+      enum: [open, closed, all]
+  run:
+    any:
+      exe: gh
+      args: [issue, list, --limit, '20', --state, '{state}']
+- name: gh_run_list
+  description: List the latest GitHub Actions workflow runs and whether they passed.
+  risk: read_only
+  category: github
+  keywords: [github, actions, workflow, ci, runs, pipeline, builds]
+  examples: [did the last github action pass, show the latest workflow runs]
+  timeout: 45
+  run:
+    any:
+      exe: gh
+      args: [run, list, --limit, '10']

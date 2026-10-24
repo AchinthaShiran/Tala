@@ -1,0 +1,288 @@
+pack: fileops
+version: 1.0.0
+description: Read, inspect, search, copy, move and archive files and folders.
+tools:
+- name: read_file
+  description: Show the first lines of a text file (read a file's contents).
+  risk: read_only
+  category: files
+  keywords: [read, open, view, contents, text file, show file, head]
+  examples: [read the file notes.txt, 'show me the contents of C:\logs\app.log', what is in /etc/hosts]
+  parameters:
+    path: {type: string, description: File to read, pattern: '^[^''"`\r\n]+$', max_length: 260}
+    lines: &id001 {type: integer, description: How many lines, default: 100, minimum: 1, maximum: 1000}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-Content -LiteralPath ''{path}'' -TotalCount {lines}']
+    linux:
+      exe: head
+      args: [-n, '{lines}', '{path}']
+    macos:
+      exe: head
+      args: [-n, '{lines}', '{path}']
+  offer_original: true
+- name: read_file_tail
+  description: Show the last lines of a text file, for example the end of a log file.
+  risk: read_only
+  category: files
+  keywords: [tail, end of file, last lines, log, recent, latest lines]
+  examples: [show the last lines of app.log, tail the log file server.log]
+  parameters:
+    path: {type: string, description: File to read, pattern: '^[^''"`\r\n]+$', max_length: 260}
+    lines: *id001
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-Content -LiteralPath ''{path}'' -Tail {lines}']
+    linux:
+      exe: tail
+      args: [-n, '{lines}', '{path}']
+    macos:
+      exe: tail
+      args: [-n, '{lines}', '{path}']
+  offer_original: true
+- name: file_properties
+  description: 'Show the properties of a file or folder: size, type, created, modified and accessed dates,
+    attributes or permissions.'
+  risk: read_only
+  category: files
+  keywords: [properties, info, metadata, size, modified, created, date, permissions, stat, attributes]
+  examples: [what are the properties of report.pdf, 'when was this file last modified: C:\data\sales.csv',
+    how big is /var/log/syslog]
+  parameters:
+    path: {type: string, description: File or folder, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-Item -LiteralPath ''{path}'' -Force | Format-List
+          Name,FullName,Mode,Length,CreationTime,LastWriteTime,LastAccessTime,Attributes']
+    linux:
+      exe: stat
+      args: ['{path}']
+    macos:
+      exe: stat
+      args: [-x, '{path}']
+- name: find_files
+  description: Find files and folders by name (wildcards allowed) inside a folder and its sub-folders.
+  risk: read_only
+  category: files
+  keywords: [find, search, locate, where is, file name, wildcard, look for file]
+  examples: [find the file report.pdf, locate all .log files in this folder, where is my config.yaml]
+  timeout: 60
+  parameters:
+    name: {type: string, description: 'File name or pattern, e.g. report.pdf or *.log', pattern: '^[A-Za-z0-9._*?-]+$',
+      max_length: 100}
+    directory: {type: string, description: Folder to search in, pattern: '^[^''"`\r\n]+$', max_length: 260,
+      default: .}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-ChildItem -LiteralPath ''{directory}'' -Recurse
+          -Filter ''{name}'' -ErrorAction SilentlyContinue | Select-Object -First 50 -ExpandProperty FullName']
+    linux:
+      exe: find
+      args: ['{directory}', -iname, '{name}']
+    macos:
+      exe: find
+      args: ['{directory}', -iname, '{name}']
+- name: search_in_files
+  description: Search for text inside the files of a folder (and sub-folders) and show matching lines.
+  risk: read_only
+  category: files
+  keywords: [grep, search text, find text, contains, match, inside files, string]
+  examples: [search the project for the word TODO, which files contain api_key, grep for timeout in this
+      folder]
+  timeout: 90
+  parameters:
+    text: {type: string, description: 'Text to look for (plain text, not a regular expression)', pattern: '^[^''"`\r\n]+$',
+      max_length: 200}
+    directory: {type: string, description: Folder to search in, pattern: '^[^''"`\r\n]+$', max_length: 260,
+      default: .}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-ChildItem -LiteralPath ''{directory}'' -Recurse
+          -File -ErrorAction SilentlyContinue | Select-String -SimpleMatch -Pattern ''{text}'' | Select-Object
+          -First 50 | ForEach-Object { $_.Path + '':'' + $_.LineNumber + '': '' + $_.Line.Trim() }']
+    linux:
+      exe: grep
+      args: [-rnIF, --, '{text}', '{directory}']
+    macos:
+      exe: grep
+      args: [-rnIF, --, '{text}', '{directory}']
+  offer_original: true
+- name: file_hash
+  description: Compute the checksum (SHA-256, SHA-1 or MD5 hash) of a file, to verify a download or compare
+    files.
+  risk: read_only
+  category: files
+  keywords: [hash, checksum, sha256, sha1, md5, verify, integrity, fingerprint]
+  examples: [what is the sha256 of installer.exe, give me the md5 checksum of backup.zip]
+  parameters:
+    path: {type: string, description: File to hash, pattern: '^[^''"`\r\n]+$', max_length: 260}
+    algorithm:
+      type: string
+      description: Hash algorithm
+      default: sha256
+      enum: [sha256, sha1, md5]
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-FileHash -LiteralPath ''{path}'' -Algorithm {algorithm}
+          | Format-List Algorithm,Hash,Path']
+    linux:
+      exe: openssl
+      args: [dgst, '-{algorithm}', '{path}']
+    macos:
+      exe: openssl
+      args: [dgst, '-{algorithm}', '{path}']
+- name: count_lines
+  description: Count the lines, words and characters of a text file.
+  risk: read_only
+  category: files
+  keywords: [count, lines, words, characters, wc, length, how long]
+  examples: [how many lines does main.py have, count the words in notes.txt]
+  parameters:
+    path: {type: string, description: Text file, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-Content -LiteralPath ''{path}'' | Measure-Object
+          -Line -Word -Character | Format-List']
+    linux:
+      exe: wc
+      args: [-l, -w, -c, '{path}']
+    macos:
+      exe: wc
+      args: [-l, -w, -c, '{path}']
+- name: folder_size
+  description: Show the total size of a folder including everything inside it.
+  risk: read_only
+  category: files
+  keywords: [size, folder size, directory size, du, how big, space used, disk usage]
+  examples: [how big is my downloads folder, 'what is the size of C:\Projects', how much space does /var/log
+      use]
+  timeout: 120
+  parameters:
+    path: {type: string, description: Folder, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, '$s=(Get-ChildItem -LiteralPath ''{path}'' -Recurse
+          -File -Force -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum; ''Size: '' + $s
+          + '' bytes ('' + [math]::Round($s/1MB,2) + '' MB)''']
+    linux:
+      exe: du
+      args: [-sh, '{path}']
+    macos:
+      exe: du
+      args: [-sh, '{path}']
+- name: make_directory
+  description: Create a new folder (parent folders are created too).
+  risk: mutating
+  category: files
+  keywords: [mkdir, create folder, new folder, make directory, new directory]
+  examples: [create a folder called backups, 'make a new directory C:\temp\build']
+  parameters:
+    path: {type: string, description: Folder to create, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'New-Item -ItemType Directory -Force -Path ''{path}''']
+    linux:
+      exe: mkdir
+      args: [-p, '{path}']
+    macos:
+      exe: mkdir
+      args: [-p, '{path}']
+- name: copy_file
+  description: Copy a file or folder to a new location. Existing files are not overwritten.
+  risk: mutating
+  category: files
+  keywords: [copy, duplicate, cp, backup file, clone]
+  examples: [copy report.pdf to the desktop, make a copy of config.yaml as config.bak]
+  timeout: 120
+  parameters:
+    source: &id002 {type: string, description: Source file or folder, pattern: '^[^''"`\r\n]+$', max_length: 260}
+    destination: &id003 {type: string, description: Destination path, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Copy-Item -LiteralPath ''{source}'' -Destination
+          ''{destination}'' -Recurse']
+    linux:
+      exe: cp
+      args: [-rn, '{source}', '{destination}']
+    macos:
+      exe: cp
+      args: [-rn, '{source}', '{destination}']
+- name: move_file
+  description: Move or rename a file or folder. Existing files are not overwritten.
+  risk: mutating
+  category: files
+  keywords: [move, rename, mv, relocate]
+  examples: [rename old.txt to new.txt, move report.pdf into the archive folder]
+  parameters:
+    source: *id002
+    destination: *id003
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Move-Item -LiteralPath ''{source}'' -Destination
+          ''{destination}''']
+    linux:
+      exe: mv
+      args: [-n, '{source}', '{destination}']
+    macos:
+      exe: mv
+      args: [-n, '{source}', '{destination}']
+- name: delete_file
+  description: Permanently delete a single file (not folders).
+  risk: destructive
+  category: files
+  keywords: [delete, remove, rm, erase, trash file]
+  examples: [delete the file old.log, 'remove C:\temp\scratch.txt']
+  confirm_message: This permanently deletes the file; it does not go to the recycle bin.
+  parameters:
+    path: {type: string, description: File to delete, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Remove-Item -LiteralPath ''{path}''']
+    linux:
+      exe: rm
+      args: ['{path}']
+    macos:
+      exe: rm
+      args: ['{path}']
+- name: create_archive
+  description: Pack a file or folder into a compressed archive (.tar.gz).
+  risk: mutating
+  category: files
+  keywords: [archive, compress, zip, tar, pack, gzip, backup]
+  examples: [compress the logs folder into logs.tar.gz, archive my project folder]
+  timeout: 300
+  parameters:
+    source: *id002
+    archive: {type: string, description: 'Archive file to create, e.g. backup.tar.gz', pattern: '^[^''"`\r\n]+$',
+      max_length: 260}
+  run:
+    any:
+      exe: tar
+      args: [-czf, '{archive}', '{source}']
+- name: extract_archive
+  description: Extract an archive (.tar.gz, .tgz, .tar or .zip) into an existing folder.
+  risk: mutating
+  category: files
+  keywords: [extract, unzip, untar, unpack, decompress, archive]
+  examples: [unzip backup.zip into the restore folder, extract release.tar.gz here]
+  timeout: 300
+  parameters:
+    archive: {type: string, description: Archive to extract, pattern: '^[^''"`\r\n]+$', max_length: 260}
+    destination: {type: string, description: Existing folder to extract into, pattern: '^[^''"`\r\n]+$',
+      max_length: 260, default: .}
+  run:
+    any:
+      exe: tar
+      args: [-xf, '{archive}', -C, '{destination}']

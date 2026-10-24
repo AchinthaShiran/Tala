@@ -1,0 +1,95 @@
+pack: services
+version: 1.0.0
+description: List and control system services (changes usually need administrator rights).
+tools:
+- name: service_list
+  description: List the system services that are running.
+  risk: read_only
+  category: services
+  keywords: [services, running services, daemon, systemctl, service list]
+  examples: [which services are running, list the running services]
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Get-Service | Where-Object Status -eq Running | Format-Table
+          -AutoSize Name,DisplayName']
+    linux:
+      exe: systemctl
+      args: [list-units, --type=service, --state=running, --no-pager]
+    macos:
+      exe: launchctl
+      args: [list]
+- name: service_status
+  description: Show the status of one system service.
+  risk: read_only
+  category: services
+  keywords: [service, status, is running, daemon, systemctl status]
+  examples: [is the docker service running, status of the sshd service]
+  parameters:
+    name: &id001 {type: string, description: Service name, pattern: '^[A-Za-z0-9._@-]+$', max_length: 128}
+  run:
+    windows:
+      exe: sc
+      args: [query, '{name}']
+    linux:
+      exe: systemctl
+      args: [status, '{name}', --no-pager]
+    macos:
+      exe: launchctl
+      args: [list, '{name}']
+- name: service_start
+  description: Start a system service.
+  risk: mutating
+  category: services
+  keywords: [service, start, launch, enable, systemctl start]
+  examples: [start the docker service, start sshd]
+  parameters:
+    name: *id001
+  run:
+    windows:
+      exe: sc
+      args: [start, '{name}']
+    linux:
+      exe: systemctl
+      args: [start, '{name}']
+    macos:
+      exe: launchctl
+      args: [kickstart, 'system/{name}']
+- name: service_stop
+  description: Stop a system service.
+  risk: destructive
+  category: services
+  keywords: [service, stop, shut down, disable, systemctl stop]
+  examples: [stop the docker service, stop sshd]
+  confirm_message: Stopping a service can interrupt other programs and connections that depend on it.
+  parameters:
+    name: *id001
+  run:
+    windows:
+      exe: sc
+      args: [stop, '{name}']
+    linux:
+      exe: systemctl
+      args: [stop, '{name}']
+    macos:
+      exe: launchctl
+      args: [kill, SIGTERM, 'system/{name}']
+- name: service_restart
+  description: Restart a system service.
+  risk: destructive
+  category: services
+  keywords: [service, restart, reload, bounce, systemctl restart]
+  examples: [restart the docker service, restart nginx]
+  confirm_message: Restarting a service briefly interrupts everything that depends on it.
+  parameters:
+    name: *id001
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, 'Restart-Service -Name ''{name}''']
+    linux:
+      exe: systemctl
+      args: [restart, '{name}']
+    macos:
+      exe: launchctl
+      args: [kickstart, -k, 'system/{name}']

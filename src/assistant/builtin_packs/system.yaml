@@ -61,10 +61,11 @@ tools:
     description: Show how long this computer has been running since the last boot.
     risk: read_only
     category: system
-    keywords: [uptime, boot, restart, running time]
+    keywords: [uptime, boot, reboot, last reboot, restart, running time, boot time]
     examples:
       - how long has my computer been on
       - when did this pc last restart
+      - when was my last reboot
     run:
       windows:
         exe: powershell
@@ -124,9 +125,10 @@ tools:
     description: Show the user account that is running the assistant.
     risk: read_only
     category: system
-    keywords: [user, username, account, whoami, login]
+    keywords: [user, username, account, whoami, who am i, login, logged in]
     examples:
       - who am I logged in as
+      - which user am I
       - what is my username
     run:
       any: {exe: whoami}
@@ -135,7 +137,7 @@ tools:
     description: "Answers 'what is the current directory / which folder am I in': prints the working directory path where the assistant was started (the terminal's directory). Fast; lists no files."
     risk: read_only
     category: files
-    keywords: [current directory, working directory, cwd, pwd, folder, here, terminal, path]
+    keywords: [current directory, working directory, cwd, pwd, which folder, current folder, folder, here, terminal, path]
     examples:
       - what is the current directory
       - which folder am I in

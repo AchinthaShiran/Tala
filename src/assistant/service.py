@@ -33,8 +33,11 @@ from assistant.domain import (
     TokenEvent,
     ToolProposedEvent,
     ToolResultEvent,
+    is_affirmative,
+    original_reply,
 )
 from assistant.domain.branding import cmd
+from assistant.domain.original import OFFER_TEXT
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +68,10 @@ class Assistant:
     def send(self, session_id: str, text: str) -> Iterator[Event]:
         """Process a user message. May end with ``ApprovalRequestedEvent`` (call ``resume``)."""
         yield from self._abandon_pending_approval(session_id)
+        offered = self._offered(session_id)
+        if offered and is_affirmative(text):
+            yield from self._show_original(session_id, text, offered)
+            return
         payload = {"messages": [HumanMessage(content=text)], "session_id": session_id}
         yield from self._stream(session_id, payload)
 
@@ -101,6 +108,30 @@ class Assistant:
     def _config(session_id: str) -> RunnableConfig:
         return {"configurable": {"thread_id": session_id}, "recursion_limit": _RECURSION_LIMIT}
 
+    def _offered(self, session_id: str) -> dict[str, str]:
+        """Raw tool output offered after the last summary, while the user has not replied."""
+        values = self._graph.get_state(self._config(session_id)).values or {}
+        offered = values.get("offered")
+        return offered if isinstance(offered, dict) and offered.get("text") else {}
+
+    def _show_original(
+        self, session_id: str, text: str, offered: dict[str, str]
+    ) -> Iterator[Event]:
+        """Answer "yes" to the offer: the stored output goes to the user as its own message.
+
+        The model is not involved and the raw text is not added to the conversation history
+        (it is untrusted and may be large); only a short note is.
+        """
+        reply = original_reply(offered.get("tool", "tool"), offered["text"])
+        yield TokenEvent(text=reply)
+        note = f"(Showed the original output of {offered.get('tool', 'the tool')} to the user.)"
+        self._graph.update_state(
+            self._config(session_id),
+            {"messages": [HumanMessage(content=text), AIMessage(content=note)], "offered": {}},
+            as_node="summarizer",
+        )
+        yield FinalEvent(text=reply)
+
     def _abandon_pending_approval(self, session_id: str) -> Iterator[Event]:
         """A new message while an approval is open means "no": deny and finish that turn."""
         pending = self.pending_approval(session_id)
@@ -125,6 +156,8 @@ class Assistant:
                         yield TokenEvent(text=token)
                     continue
                 for node, update in chunk.items():
+                    if node == "summarizer" and (update or {}).get("offered"):
+                        yield TokenEvent(text="\n\n" + OFFER_TEXT)  # not part of the streamed text
                     if node == "__interrupt__":
                         requests = [r for item in update for r in _requests_from(item.value)]
                         yield ApprovalRequestedEvent(requests=requests)

@@ -13,17 +13,39 @@ function Get-Setting([string]$Suffix) {
     [Environment]::GetEnvironmentVariable("${EnvPrefix}_$Suffix")
 }
 
+# Runs "<exe> <args>" with no console input and a time limit; returns its output, or $null if it
+# failed or hung (the Microsoft Store "python" stubs and some launchers can wait for a keypress).
+function Get-ProbeOutput([string]$Exe, [string[]]$ProbeArgs, [int]$Seconds = 15) {
+    try {
+        $info = New-Object System.Diagnostics.ProcessStartInfo
+        $info.FileName = $Exe
+        $info.Arguments = ($ProbeArgs | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } }) -join " "
+        $info.UseShellExecute = $false
+        $info.RedirectStandardOutput = $true
+        $info.RedirectStandardError = $true
+        $info.RedirectStandardInput = $true
+        $info.CreateNoWindow = $true
+        $proc = [System.Diagnostics.Process]::Start($info)
+        $proc.StandardInput.Close()
+        $out = $proc.StandardOutput.ReadToEndAsync()
+        if (-not $proc.WaitForExit($Seconds * 1000)) {
+            try { $proc.Kill() } catch { }
+            return $null
+        }
+        if ($proc.ExitCode -ne 0) { return $null }
+        return $out.Result.Trim()
+    } catch {
+        return $null
+    }
+}
+
 function Find-Python {
     foreach ($candidate in @("py", "python3", "python")) {
         $found = Get-Command $candidate -ErrorAction SilentlyContinue
         if (-not $found) { continue }
-        # The Microsoft Store "python" aliases are stubs that can block or open the Store; skip them.
-        if ($found.Source -like "*\WindowsApps\*") { continue }
-        $pyArgs = if ($candidate -eq "py") { @("-3") } else { @() }
-        try {
-            $text = (& $found.Source @pyArgs -c "import sys; print('.'.join(map(str, sys.version_info[:2])))" 2>$null)
-            if ($text -and ([version]$text -ge $MinPython)) { return @($found.Source) + $pyArgs }
-        } catch { continue }
+        [string[]]$pyArgs = if ($candidate -eq "py") { @("-3") } else { @() }  # typed: a lone "-3" must stay an array
+        $text = Get-ProbeOutput $found.Source ($pyArgs + @("-c", "import sys; print('.'.join(map(str, sys.version_info[:2])))"))
+        if ($text -match '^\d+\.\d+$' -and ([version]$text -ge $MinPython)) { return @($found.Source) + $pyArgs }
     }
     return $null
 }

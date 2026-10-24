@@ -1,0 +1,174 @@
+pack: packagemanagers
+version: 1.0.0
+description: apt (Linux), Homebrew (macOS, Linux) and Chocolatey (Windows).
+tools:
+- name: apt_search
+  description: Search the apt package index for a package (Debian and Ubuntu).
+  risk: read_only
+  category: packages
+  keywords: [apt, search package, debian, ubuntu, package]
+  examples: [apt search nginx, is there an apt package for htop]
+  parameters:
+    query: &id001 {type: string, description: Package name or search text, pattern: '^[A-Za-z0-9._+-]+$',
+      max_length: 100}
+  run:
+    linux:
+      exe: apt-cache
+      args: [search, '{query}']
+- name: apt_show
+  description: 'Show details of an apt package: version, size and description (Debian and Ubuntu).'
+  risk: read_only
+  category: packages
+  keywords: [apt, package info, show package, debian, ubuntu]
+  examples: [apt show nginx, tell me about the apt package curl]
+  parameters:
+    package: &id002 {type: string, description: Package name, pattern: '^[A-Za-z0-9._+@/-]+$', max_length: 100}
+  run:
+    linux:
+      exe: apt-cache
+      args: [show, '{package}']
+- name: apt_upgradable
+  description: List packages that have updates available (apt, Debian and Ubuntu).
+  risk: read_only
+  category: packages
+  keywords: [apt, updates, upgradable, outdated, debian, ubuntu]
+  examples: [which packages can be upgraded with apt, apt list upgradable]
+  run:
+    linux:
+      exe: apt
+      args: [list, --upgradable]
+- name: brew_list
+  description: List the packages installed with Homebrew.
+  risk: read_only
+  category: packages
+  keywords: [brew, homebrew, installed, packages, formulae]
+  examples: [what is installed with brew, brew list]
+  run:
+    macos:
+      exe: brew
+      args: [list, --versions]
+    linux:
+      exe: brew
+      args: [list, --versions]
+- name: brew_outdated
+  description: List Homebrew packages that have newer versions.
+  risk: read_only
+  category: packages
+  keywords: [brew, homebrew, outdated, updates]
+  examples: [which brew packages are outdated, brew outdated]
+  run:
+    macos:
+      exe: brew
+      args: [outdated]
+    linux:
+      exe: brew
+      args: [outdated]
+- name: brew_search
+  description: Search Homebrew for a package.
+  risk: read_only
+  category: packages
+  keywords: [brew, homebrew, search package]
+  examples: [brew search wget, is there a homebrew formula for ffmpeg]
+  parameters:
+    query: *id001
+  run:
+    macos:
+      exe: brew
+      args: [search, '{query}']
+    linux:
+      exe: brew
+      args: [search, '{query}']
+- name: brew_info
+  description: Show details of a Homebrew package.
+  risk: read_only
+  category: packages
+  keywords: [brew, homebrew, package info]
+  examples: [brew info wget, tell me about the homebrew package node]
+  parameters:
+    package: *id002
+  run:
+    macos:
+      exe: brew
+      args: [info, '{package}']
+    linux:
+      exe: brew
+      args: [info, '{package}']
+- name: brew_install
+  description: Install a package with Homebrew. Use only when the user names the package.
+  risk: mutating
+  category: packages
+  keywords: [brew, homebrew, install]
+  examples: [brew install wget, install ffmpeg with homebrew]
+  timeout: 900
+  parameters:
+    package: *id002
+  run:
+    macos:
+      exe: brew
+      args: [install, '{package}']
+    linux:
+      exe: brew
+      args: [install, '{package}']
+- name: brew_upgrade
+  description: Upgrade all outdated Homebrew packages.
+  risk: mutating
+  category: packages
+  keywords: [brew, homebrew, upgrade, update all]
+  examples: [brew upgrade, update everything installed with homebrew]
+  timeout: 1800
+  run:
+    macos:
+      exe: brew
+      args: [upgrade]
+    linux:
+      exe: brew
+      args: [upgrade]
+- name: brew_uninstall
+  description: Uninstall a Homebrew package.
+  risk: destructive
+  category: packages
+  keywords: [brew, homebrew, uninstall, remove]
+  examples: [brew uninstall wget, remove the homebrew package node]
+  confirm_message: This removes the package and its files.
+  parameters:
+    package: *id002
+  run:
+    macos:
+      exe: brew
+      args: [uninstall, '{package}']
+    linux:
+      exe: brew
+      args: [uninstall, '{package}']
+- name: choco_list
+  description: List the packages installed with Chocolatey (Windows).
+  risk: read_only
+  category: packages
+  keywords: [choco, chocolatey, installed, packages]
+  examples: [what is installed with chocolatey, choco list]
+  run:
+    windows:
+      exe: choco
+      args: [list]
+- name: choco_search
+  description: Search Chocolatey for a package (Windows).
+  risk: read_only
+  category: packages
+  keywords: [choco, chocolatey, search package]
+  examples: [choco search git, is there a chocolatey package for 7zip]
+  parameters:
+    query: *id001
+  run:
+    windows:
+      exe: choco
+      args: [search, '{query}']
+- name: choco_outdated
+  description: List Chocolatey packages that have newer versions (Windows).
+  risk: read_only
+  category: packages
+  keywords: [choco, chocolatey, outdated, updates]
+  examples: [which chocolatey packages are outdated, choco outdated]
+  timeout: 120
+  run:
+    windows:
+      exe: choco
+      args: [outdated]

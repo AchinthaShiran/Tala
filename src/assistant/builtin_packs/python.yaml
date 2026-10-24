@@ -1,0 +1,208 @@
+pack: python
+version: 1.0.0
+description: Python, pip, virtual environments and uv.
+tools:
+- name: python_version
+  description: Show the installed Python version.
+  risk: read_only
+  category: python
+  keywords: [python, python version, interpreter, py]
+  examples: [what python version do I have, python version]
+  run:
+    windows:
+      exe: py
+      args: ['-3', --version]
+    linux:
+      exe: python3
+      args: [--version]
+    macos:
+      exe: python3
+      args: [--version]
+- name: pip_list
+  description: List the Python packages installed in the active Python environment.
+  risk: read_only
+  category: python
+  keywords: [pip, packages, installed, libraries, modules, python]
+  examples: [which python packages are installed, pip list]
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pip, list, --disable-pip-version-check]
+    linux:
+      exe: python3
+      args: [-m, pip, list, --disable-pip-version-check]
+    macos:
+      exe: python3
+      args: [-m, pip, list, --disable-pip-version-check]
+- name: pip_outdated
+  description: List installed Python packages that have newer versions available.
+  risk: read_only
+  category: python
+  keywords: [pip, outdated, upgrade, updates, python packages]
+  examples: [which python packages are outdated, pip outdated]
+  timeout: 90
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pip, list, --outdated, --disable-pip-version-check]
+    linux:
+      exe: python3
+      args: [-m, pip, list, --outdated, --disable-pip-version-check]
+    macos:
+      exe: python3
+      args: [-m, pip, list, --outdated, --disable-pip-version-check]
+- name: pip_show
+  description: 'Show details of one installed Python package: version, location and dependencies.'
+  risk: read_only
+  category: python
+  keywords: [pip, show, package info, version of package, python package]
+  examples: [which version of requests is installed, pip show numpy]
+  parameters:
+    package: &id001 {type: string, description: 'Package name, optionally with ==version', pattern: '^[A-Za-z0-9._=\[\],-]+$',
+      max_length: 100}
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pip, show, '{package}']
+    linux:
+      exe: python3
+      args: [-m, pip, show, '{package}']
+    macos:
+      exe: python3
+      args: [-m, pip, show, '{package}']
+- name: pip_check
+  description: Check installed Python packages for broken or conflicting dependencies.
+  risk: read_only
+  category: python
+  keywords: [pip, check, dependencies, conflicts, broken]
+  examples: [are there broken python dependencies, pip check]
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pip, check]
+    linux:
+      exe: python3
+      args: [-m, pip, check]
+    macos:
+      exe: python3
+      args: [-m, pip, check]
+- name: pip_install
+  description: Install a Python package with pip. Use only when the user names the package.
+  risk: mutating
+  category: python
+  keywords: [pip, install, python package, add library]
+  examples: [pip install requests, install the python package pandas]
+  timeout: 600
+  parameters:
+    package: *id001
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pip, install, --disable-pip-version-check, '{package}']
+    linux:
+      exe: python3
+      args: [-m, pip, install, --disable-pip-version-check, '{package}']
+    macos:
+      exe: python3
+      args: [-m, pip, install, --disable-pip-version-check, '{package}']
+- name: pip_uninstall
+  description: Uninstall a Python package with pip.
+  risk: destructive
+  category: python
+  keywords: [pip, uninstall, remove package, python package]
+  examples: [pip uninstall requests, remove the python package pandas]
+  confirm_message: This removes the package from the Python environment.
+  parameters:
+    package: *id001
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pip, uninstall, -y, '{package}']
+    linux:
+      exe: python3
+      args: [-m, pip, uninstall, -y, '{package}']
+    macos:
+      exe: python3
+      args: [-m, pip, uninstall, -y, '{package}']
+- name: create_venv
+  description: Create a Python virtual environment in a folder.
+  risk: mutating
+  category: python
+  keywords: [venv, virtualenv, virtual environment, python environment]
+  examples: [create a python virtual environment, make a venv called .venv]
+  timeout: 120
+  parameters:
+    path: {type: string, description: Folder for the environment, pattern: '^[^''"`\r\n]+$', max_length: 260,
+      default: .venv}
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, venv, '{path}']
+    linux:
+      exe: python3
+      args: [-m, venv, '{path}']
+    macos:
+      exe: python3
+      args: [-m, venv, '{path}']
+- name: run_python_script
+  description: Run a Python script file and show its output.
+  risk: destructive
+  category: python
+  keywords: [run, execute, python script, py file, launch]
+  examples: [run main.py, execute the python script build.py]
+  confirm_message: This runs a program with your permissions; it can change or delete anything you can.
+  timeout: 120
+  parameters:
+    script: {type: string, description: Path to the .py file, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    windows:
+      exe: py
+      args: ['-3', '{script}']
+    linux:
+      exe: python3
+      args: ['{script}']
+    macos:
+      exe: python3
+      args: ['{script}']
+  offer_original: true
+- name: run_pytest
+  description: Run the Python tests in a folder or file with pytest.
+  risk: mutating
+  category: python
+  keywords: [pytest, tests, run tests, python tests, unit tests, test suite]
+  examples: [run the python tests, run pytest on the tests folder]
+  timeout: 900
+  parameters:
+    path: {type: string, description: Folder or file with tests, pattern: '^[^''"`\r\n]+$', max_length: 260,
+      default: .}
+  run:
+    windows:
+      exe: py
+      args: ['-3', -m, pytest, -q, '{path}']
+    linux:
+      exe: python3
+      args: [-m, pytest, -q, '{path}']
+    macos:
+      exe: python3
+      args: [-m, pytest, -q, '{path}']
+- name: uv_version
+  description: Show the installed uv (Python package manager) version.
+  risk: read_only
+  category: python
+  keywords: [uv, astral, package manager, version]
+  examples: [uv version, is uv installed]
+  run:
+    any:
+      exe: uv
+      args: [--version]
+- name: uv_sync
+  description: Install the project's Python dependencies from its lock file with uv.
+  risk: mutating
+  category: python
+  keywords: [uv, sync, dependencies, install, project]
+  examples: [uv sync, install the project dependencies with uv]
+  timeout: 900
+  run:
+    any:
+      exe: uv
+      args: [sync]

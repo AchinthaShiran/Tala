@@ -1,0 +1,60 @@
+pack: firewall
+version: 1.0.0
+description: Inspect and change the host firewall (changes need administrator rights).
+tools:
+- name: firewall_status
+  description: Show whether the firewall is turned on.
+  risk: read_only
+  category: security
+  keywords: [firewall, status, enabled, ufw, security, defender firewall]
+  examples: [is the firewall on, show the firewall status]
+  run:
+    windows:
+      exe: netsh
+      args: [advfirewall, show, allprofiles, state]
+    linux:
+      exe: ufw
+      args: [status]
+    macos:
+      exe: /usr/libexec/ApplicationFirewall/socketfilterfw
+      args: [--getglobalstate]
+- name: firewall_block_port
+  description: Block incoming connections on a port in the firewall.
+  risk: destructive
+  category: security
+  keywords: [firewall, block, port, deny, close port]
+  examples: [block port 3389 in the firewall, deny incoming connections on port 23]
+  confirm_message: This changes the firewall and can block services or cut off remote access.
+  parameters:
+    port: &id001 {type: integer, description: Port number, minimum: 1, maximum: 65535}
+    protocol: &id002
+      type: string
+      description: Protocol
+      default: tcp
+      enum: [tcp, udp]
+  run:
+    windows:
+      exe: netsh
+      args: [advfirewall, firewall, add, rule, 'name=blocked-{protocol}-port-{port}', dir=in, action=block,
+        'protocol={protocol}', 'localport={port}']
+    linux:
+      exe: ufw
+      args: [deny, '{port}/{protocol}']
+- name: firewall_allow_port
+  description: Allow incoming connections on a port in the firewall.
+  risk: destructive
+  category: security
+  keywords: [firewall, allow, open port, permit, port]
+  examples: [open port 8080 in the firewall, allow incoming connections on port 22]
+  confirm_message: This opens a port to incoming connections, which exposes whatever listens on it.
+  parameters:
+    port: *id001
+    protocol: *id002
+  run:
+    windows:
+      exe: netsh
+      args: [advfirewall, firewall, add, rule, 'name=allowed-{protocol}-port-{port}', dir=in, action=allow,
+        'protocol={protocol}', 'localport={port}']
+    linux:
+      exe: ufw
+      args: [allow, '{port}/{protocol}']
