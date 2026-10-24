@@ -40,12 +40,15 @@ function Get-ProbeOutput([string]$Exe, [string[]]$ProbeArgs, [int]$Seconds = 15)
 }
 
 function Find-Python {
+    $script:PythonNotes = @()
     foreach ($candidate in @("py", "python3", "python")) {
         $found = Get-Command $candidate -ErrorAction SilentlyContinue
-        if (-not $found) { continue }
+        if (-not $found) { $script:PythonNotes += "${candidate}: not found"; continue }
         [string[]]$pyArgs = if ($candidate -eq "py") { @("-3") } else { @() }  # typed: a lone "-3" must stay an array
         $text = Get-ProbeOutput $found.Source ($pyArgs + @("-c", "import sys; print('.'.join(map(str, sys.version_info[:2])))"))
         if ($text -match '^\d+\.\d+$' -and ([version]$text -ge $MinPython)) { return @($found.Source) + $pyArgs }
+        $answer = if ($text) { "version $text" } else { "no answer" }
+        $script:PythonNotes += "$($found.Source): $answer"
     }
     return $null
 }
@@ -67,7 +70,8 @@ function Install-App {
         Write-Host "Looking for Python ..."
         $python = Find-Python
         if (-not $python) {
-            throw "Python $MinPython or newer is required. Install it from https://www.python.org/downloads/ and run this again."
+            $checked = $script:PythonNotes -join "; "
+            throw "Python $MinPython or newer is required. Install it from https://www.python.org/downloads/ and run this again. (Checked: $checked)"
         }
         $exe = $python[0]
         $prefix = @($python | Select-Object -Skip 1)
