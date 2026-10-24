@@ -128,7 +128,8 @@ def test_existing_config_is_merged_and_backed_up(env: Path):
     data = yaml.safe_load(env.read_text(encoding="utf-8"))
     assert data["packs"] == {"disabled_tools": ["kill_process"]} and "models" in data
     assert env.with_suffix(".yaml.bak").exists()
-    assert "merged into it" in result.output and "backup" in result.output.lower()
+    output = " ".join(result.output.split())  # the long temp path makes Rich wrap the sentence
+    assert "merged into it" in output and "backup" in output.lower()
 
 
 def test_missing_models_are_downloaded_with_pull(env: Path):

@@ -67,3 +67,13 @@ def test_agent_eval_scores_tool_choice_args_and_chat(make_harness):
 def test_simulated_runner_never_runs_anything():
     result = SimulatedRunner().run(["rm", "-rf", "/"], timeout=1, max_bytes=10)
     assert result.ok and "simulated" in result.stdout
+
+
+def test_retrieval_eval_skips_cases_whose_tools_do_not_exist_on_this_os():
+    cases = load_cases()
+    gone = {name for case in cases[:3] for name in case.expect}
+    tools = [t for t in TOOLS if t.name not in gone]
+    report = evaluate_retrieval(tools, cases, RetrievalSettings())
+    skipped = [r for r in report.results if r.skipped]
+    assert skipped and all(set(r.case.expect) <= gone for r in skipped)
+    assert not any(r.skipped for r in report.failures)

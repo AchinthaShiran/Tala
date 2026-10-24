@@ -61,10 +61,18 @@ def evaluate_retrieval(
         index = ToolIndex(":memory:", settings, embeddings=None)
         index.sync(registry_tools)
     report = EvalReport(mode="retrieval")
-    tool_cases = [c for c in cases if c.expects_tool]
-    chat_cases = [c for c in cases if not c.expects_tool]
+    available = {getattr(t, "name", None) for t in registry_tools}
+    # Cases whose tools exist only on another OS cannot be scored here (as in agent evaluation).
+    runnable = [c for c in cases if not c.expects_tool or available & set(c.expect)]
+    tool_cases = [c for c in runnable if c.expects_tool]
+    chat_cases = [c for c in runnable if not c.expects_tool]
     recalled = top1 = false_strong = 0
     for case in cases:
+        if case not in runnable:
+            report.results.append(
+                CaseResult(case, False, "no expected tool is defined for this OS", skipped=True)
+            )
+            continue
         result = index.search(case.query)
         if case.expects_tool:
             in_k = any(name in case.expect for name in result.names)
