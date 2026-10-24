@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,26 @@ from tests.support import HashEmbeddings
 
 TOOLS = list(load_packs([PackRoot(builtin_packs_dir(), "builtin")]).tools.values())
 NAMES = {t.name for t in TOOLS}
+
+
+def _extensions_loadable() -> bool:
+    """Some Python builds (e.g. macOS) ship sqlite3 without loadable-extension support."""
+    conn = sqlite3.connect(":memory:")
+    try:
+        import sqlite_vec
+
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+    except (ImportError, AttributeError, sqlite3.Error):
+        return False
+    finally:
+        conn.close()
+    return True
+
+
+needs_vec = pytest.mark.skipif(
+    not _extensions_loadable(), reason="sqlite3 cannot load the sqlite-vec extension here"
+)
 
 
 @pytest.fixture
@@ -105,6 +126,7 @@ def settings(**kw):
     return RetrievalSettings(min_similarity=0.3, strong_similarity=0.5, **kw)
 
 
+@needs_vec
 def test_vector_search_enabled_and_used(tmp_path):
     emb = HashEmbeddings()
     index = ToolIndex(tmp_path / "v.sqlite", settings(), emb, embedding_id="hash64")
@@ -139,6 +161,7 @@ def test_query_time_embedding_failure_degrades_without_repeated_retries(tmp_path
     index.close()
 
 
+@needs_vec
 def test_changed_embedding_model_or_dimension_rebuilds_vectors(tmp_path):
     path = tmp_path / "v.sqlite"
     a = ToolIndex(path, settings(), HashEmbeddings(dim=32), embedding_id="model-a")
