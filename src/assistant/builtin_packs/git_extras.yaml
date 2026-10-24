@@ -36,6 +36,7 @@ tools:
     any:
       exe: git
       args: [show, --stat, '{rev}']
+  offer_original: true
 - name: git_stash_list
   description: List the stashed changes of the git repository.
   risk: read_only

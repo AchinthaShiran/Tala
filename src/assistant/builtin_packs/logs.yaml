@@ -25,6 +25,7 @@ tools:
     macos:
       exe: log
       args: [show, --last, '{minutes}m', --style, compact]
+  offer_original: true
 - name: system_errors_recent
   description: Show only the errors from the system log in the last few minutes.
   risk: read_only
@@ -47,3 +48,4 @@ tools:
     macos:
       exe: log
       args: [show, --last, '{minutes}m', --style, compact, --predicate, messageType == error]
+  offer_original: true

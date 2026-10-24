@@ -51,6 +51,7 @@ runtime:
   max_steps: 3                  # tool rounds per request
   followups: auto               # auto | always | never: extra executor rounds after the first results
   direct_output_chars: 0        # >0: show one small successful read-only result verbatim (no summary)
+  offer_original_output: true   # after summarising pages, files and logs, offer the original text
   fast_path: true               # skip the executor model for decisive, argument-free read-only tools
   fast_path_margin: 0.05        # similarity lead the top tool needs over the runner-up
   max_repairs: 2                # attempts to fix an invalid tool call

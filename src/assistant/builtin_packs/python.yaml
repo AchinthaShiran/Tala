@@ -164,6 +164,7 @@ tools:
     macos:
       exe: python3
       args: ['{script}']
+  offer_original: true
 - name: run_pytest
   description: Run the Python tests in a folder or file with pytest.
   risk: mutating

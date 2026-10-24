@@ -45,6 +45,7 @@ tools:
 - name: git_diff
   description: Show changes between commits, commit and working tree, etc.
   risk: read_only
+  offer_original: true
   run:
     any:
       exe: git

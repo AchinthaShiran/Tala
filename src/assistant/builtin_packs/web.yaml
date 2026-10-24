@@ -17,6 +17,7 @@ tools:
     any:
       exe: curl
       args: [-sSI, -L, --max-time, '15', '{url}']
+  offer_original: true
 - name: http_get
   description: Fetch a web page or API endpoint (GET request) and show the response text.
   risk: read_only
@@ -30,6 +31,7 @@ tools:
     any:
       exe: curl
       args: [-sS, -L, --max-time, '20', --max-filesize, '1000000', '{url}']
+  offer_original: true
 - name: download_file
   description: Download a file from a URL to a local path. An existing file at that path is overwritten.
   risk: mutating

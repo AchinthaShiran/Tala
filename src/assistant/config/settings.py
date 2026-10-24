@@ -83,6 +83,9 @@ class RuntimeSettings(_Section):
     # Show a single small, successful read-only result verbatim instead of asking the model to
     # summarise it (fastest first output). 0 disables.
     direct_output_chars: int = Field(default=0, ge=0)
+    # After summarising a tool marked `offer_original` (web pages, files, logs), ask whether the
+    # user wants the original output, and show it verbatim on a yes.
+    offer_original_output: bool = True
     # Skip the executor model when retrieval is decisive and the tool is read-only with no
     # arguments (e.g. disk_free). Saves a whole model call before the tool runs.
     fast_path: bool = True
