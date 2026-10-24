@@ -1,14 +1,43 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tala-assistant"
-version = "3.0.0"
+name = "tala-ai"
+dynamic = ["version"]  # single source: __version__ in src/assistant/__init__.py
 description = "Local, OS-agnostic desktop AI assistant: YAML tool packs, LangGraph agent, Ollama."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Achintha Bandara" }]
+keywords = [
+    "ai",
+    "assistant",
+    "ollama",
+    "langchain",
+    "langgraph",
+    "local-llm",
+    "desktop-assistant",
+    "tool-calling",
+    "cli",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Utilities",
+]
 dependencies = [
     "langchain-core>=1.0,<2",
     "langchain-ollama>=1.0,<2",
@@ -32,11 +61,36 @@ dev = [
     "import-linter>=2.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/AchinthaShiran/Tala"
+Source = "https://github.com/AchinthaShiran/Tala"
+Issues = "https://github.com/AchinthaShiran/Tala/issues"
+Changelog = "https://github.com/AchinthaShiran/Tala/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/AchinthaShiran/Tala/tree/main/docs"
+
 [project.scripts]
 tala = "assistant.cli.app:main"
 
+[tool.hatch.version]
+path = "src/assistant/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/assistant"]
+
+# Planning notes (.10x), CI config and local tooling stay out of the source archive.
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/scripts",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/NOTICE",
+    "/install.sh",
+    "/install.ps1",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -75,7 +129,7 @@ name = "Layered architecture"
 type = "layers"
 layers = [
     "assistant.cli",
-    "assistant.bootstrap | assistant.evaluation",
+    "assistant.bootstrap | assistant.evaluation | assistant.setup",
     "assistant.service",
     "assistant.agent",
     "assistant.retrieval | assistant.safety | assistant.llm | assistant.memory",

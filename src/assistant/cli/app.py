@@ -11,11 +11,13 @@ from typing import Annotated
 import typer
 from rich.console import Console
 from rich.markup import escape
+from rich.prompt import Confirm
 from rich.table import Table
 
 from assistant import __version__
 from assistant.bootstrap import Runtime, build_runtime, pack_roots, untrusted_project_packs
 from assistant.cli.render import ConsoleRenderer
+from assistant.cli.setup_cmd import run_setup
 from assistant.config import AppPaths, Settings, TrustStore, default_paths, load_settings
 from assistant.domain import AssistantError, current_platform
 from assistant.domain.branding import APP_NAME, COMMAND, PROJECT_DIR, TAGLINE, cmd
@@ -30,6 +32,7 @@ from assistant.llm import build_embeddings, check_backend
 from assistant.memory import FactStore
 from assistant.packs import PackRoot, Severity, ToolRegistry, load_packs
 from assistant.retrieval import ToolIndex
+from assistant.setup.wizard import Mode
 
 app = typer.Typer(
     name=COMMAND,
@@ -80,6 +83,7 @@ def chat(
     ] = False,
 ) -> None:
     """Interactive chat. Commands: /tools /reset /history /exit"""
+    _offer_first_run_setup(config)
     try:
         runtime = create_runtime(config)
     except AssistantError as exc:
@@ -121,6 +125,7 @@ def ask(
     show_output: Annotated[bool, typer.Option("--show-output")] = False,
 ) -> None:
     """Ask a single question and exit."""
+    _offer_first_run_setup(config)
     try:
         runtime = create_runtime(config)
     except AssistantError as exc:
@@ -447,6 +452,79 @@ def eval_agent(
         _print_report(report, verbose)
     finally:
         runtime.close()
+
+
+@app.command()
+def setup(
+    default: Annotated[
+        bool, typer.Option("--default", help="Default setup: the same fixed settings everywhere")
+    ] = False,
+    recommended: Annotated[
+        bool, typer.Option("--recommended", help="Recommended setup: tailored to this hardware")
+    ] = False,
+    advanced: Annotated[
+        bool, typer.Option("--advanced", help="Choose models and options yourself")
+    ] = False,
+    yes: Annotated[
+        bool, typer.Option("--yes", "-y", help="Accept the settings shown without asking")
+    ] = False,
+    pull: Annotated[
+        bool | None,
+        typer.Option("--pull/--no-pull", help="Download missing models (default: ask)"),
+    ] = None,
+    check: Annotated[
+        bool, typer.Option("--check", help="Show detected hardware and the recommendation only")
+    ] = False,
+    config: ConfigOpt = None,
+) -> None:
+    """First-run wizard: default, recommended or advanced setup; always confirmed before applying."""
+    if sum((default, recommended, advanced)) > 1:
+        raise _fail("choose only one of --default, --recommended and --advanced")
+    if advanced and yes:
+        raise _fail("advanced setup is interactive; drop --yes or use --default/--recommended")
+    mode: Mode = (
+        "default"
+        if default
+        else "recommended"
+        if recommended
+        else "advanced"
+        if advanced
+        else "ask"
+    )
+    _, paths = _load(config)
+    code = run_setup(
+        console,
+        config or paths.config_file,
+        mode=mode,
+        assume_yes=yes,
+        pull=pull,
+        check_only=check,
+    )
+    if code:
+        raise typer.Exit(code=code)
+
+
+SETUP_SKIPPED_MARKER = ".setup-skipped"
+
+
+def _interactive() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def _offer_first_run_setup(config: Path | None) -> None:
+    """On the very first interactive run, offer the wizard once."""
+    paths = default_paths()
+    config_file = config or paths.config_file
+    marker = paths.data_dir / SETUP_SKIPPED_MARKER
+    if config_file.exists() or marker.exists() or not _interactive():
+        return
+    console.print(f"[bold]Welcome to {APP_NAME}.[/bold] No configuration found yet.")
+    if Confirm.ask("Run the setup wizard now (picks models for your hardware)?", default=True):
+        run_setup(console, config_file, mode="ask", assume_yes=False, pull=None, check_only=False)
+        return
+    paths.ensure()
+    marker.write_text("Declined the first-run wizard.", encoding="utf-8")
+    console.print(f"[dim]Run {cmd('setup')} whenever you like.[/dim]")
 
 
 @app.command()

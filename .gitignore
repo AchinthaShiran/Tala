@@ -13,4 +13,4 @@ build/
 *.db-*
 .tala/data/
 .import_linter_cache/
-.tala-home/
+.tala-home*/

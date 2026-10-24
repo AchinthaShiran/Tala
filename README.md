@@ -30,22 +30,46 @@ Run it? [y/N]
 
 ## Quick start
 
-Requirements: Python 3.11+, [Ollama](https://ollama.com) running locally.
+You need [Ollama](https://ollama.com/download) running locally.
+
+**One-line install** (installs into an isolated environment, then starts the setup wizard):
+
+```powershell
+irm https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.ps1 | iex   # Windows
+```
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.sh | sh   # macOS / Linux
+```
+
+**Or from PyPI** (needs Python 3.11 or newer, not a specific version):
+
+```sh
+pipx install tala-ai      # or: uv tool install tala-ai
+tala setup
+```
+
+**From a clone:**
 
 ```bash
-ollama pull gemma4:e2b && ollama pull granite4.1:3b && ollama pull nomic-embed-text
-
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-
-tala doctor          # checks Ollama, models, packs, tool availability on this machine
+tala setup           # pick Default or Advanced; detects your hardware and warns about heavy models
 tala chat            # start talking
 ```
+
+`tala setup` offers three setups: **Default** (one fixed, conservative configuration, the same everywhere),
+**Recommended** (tailored to your detected hardware) and **Advanced** (choose models, context size, memory
+use, approval rules and speed options from curated sets, with warnings when a choice will strain your
+machine). Whichever you pick, the full settings are shown and you confirm before anything is applied. It
+also offers itself the first time you run `tala chat`. Details: [docs/setup.md](docs/setup.md).
+`tala doctor` re-checks everything at any time.
 
 Other commands:
 
 | Command | Purpose |
 | --- | --- |
+| `tala setup [--default\|--recommended\|--advanced] [--check]` | First-run wizard: hardware-aware setup and model downloads |
 | `tala ask "..."` | One question, then exit |
 | `tala packs list [--all]` | Tools available here (and why others are not) |
 | `tala packs show NAME` | Full definition of a tool |
@@ -150,4 +174,11 @@ CI runs all of the above on Windows, Linux and macOS (`.github/workflows/ci.yml`
 - Small models (2-4B) make mistakes. Measure with `tala eval agent` before trusting a model, and keep
   mutating tools on `ask`.
 
-See [CHANGELOG](CHANGELOG.md) and the decision records in [.10x/adrs](.10x/adrs).
+See [CHANGELOG](CHANGELOG.md) and the decision records in [.10x/adrs](.10x/adrs). Maintainers: releasing
+is described in [docs/publishing.md](docs/publishing.md).
+
+## License
+
+Copyright 2026 Achintha Bandara. Licensed under the [Apache License, Version 2.0](LICENSE): you may use,
+modify and distribute it, including commercially, as long as you keep the copyright and [NOTICE](NOTICE)
+files and state significant changes. It includes an explicit patent grant and comes with no warranty.
