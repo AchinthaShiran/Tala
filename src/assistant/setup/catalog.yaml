@@ -1,0 +1,90 @@
+# Models the setup wizard can offer. Edit this file to add or retire choices; no code change needed.
+#
+# download_gb  approximate size of `ollama pull` (4-bit quantised builds)
+# memory_gb    approximate RAM/VRAM the loaded weights need, excluding the context cache
+# kv_gb_per_8k approximate context-cache memory per 8192 tokens of num_ctx
+# tier         light = fine on modest hardware, balanced = wants 16 GB+ or a GPU,
+#              heavy = large model: slow to load, high memory, slow on CPU
+# default_for  the model recommended for that tier
+# router_ok    small and fast enough to act as the dedicated router model
+models:
+  - tag: gemma4:e2b
+    label: Gemma 4 E2B
+    role: chat
+    tier: light
+    download_gb: 4.6
+    memory_gb: 5.3
+    kv_gb_per_8k: 0.4
+    tool_calling: true
+    default_for: light
+    notes: The default. Good tool use for its size; fastest first answers on modest hardware.
+
+  - tag: granite4.1:3b
+    label: Granite 4.1 3B
+    role: chat
+    tier: light
+    download_gb: 2.1
+    memory_gb: 2.6
+    kv_gb_per_8k: 0.5
+    tool_calling: true
+    router_ok: true
+    notes: Small and quick. A good choice as a dedicated router model.
+
+  - tag: gemma4:e4b
+    label: Gemma 4 E4B
+    role: chat
+    tier: balanced
+    download_gb: 6.6
+    memory_gb: 7.6
+    kv_gb_per_8k: 0.8
+    tool_calling: true
+    default_for: balanced
+    notes: More reliable tool calls than E2B; about 40% slower on CPU.
+
+  - tag: qwen3:8b
+    label: Qwen 3 8B
+    role: chat
+    tier: balanced
+    download_gb: 5.2
+    memory_gb: 6.5
+    kv_gb_per_8k: 1.1
+    tool_calling: true
+    notes: Strong tool calling. Caches prompts efficiently, so repeated requests are quick.
+
+  - tag: llama3.1:8b
+    label: Llama 3.1 8B
+    role: chat
+    tier: balanced
+    download_gb: 4.9
+    memory_gb: 6.0
+    kv_gb_per_8k: 1.0
+    tool_calling: true
+    notes: Widely used general model with tool support.
+
+  - tag: gpt-oss:20b
+    label: GPT-OSS 20B
+    role: chat
+    tier: heavy
+    download_gb: 14.0
+    memory_gb: 15.5
+    kv_gb_per_8k: 1.5
+    tool_calling: true
+    default_for: heavy
+    notes: Most capable choice here. Needs about 16 GB of GPU memory or 32 GB of RAM.
+
+  - tag: nomic-embed-text
+    label: nomic-embed-text
+    role: embedding
+    tier: light
+    download_gb: 0.27
+    memory_gb: 0.5
+    default_for: light
+    notes: Default embedding model for finding the right tool.
+
+  - tag: mxbai-embed-large
+    label: mxbai-embed-large
+    role: embedding
+    tier: light
+    download_gb: 0.67
+    memory_gb: 1.0
+    notes: Larger embedding model; slightly better matching, a bit more memory.

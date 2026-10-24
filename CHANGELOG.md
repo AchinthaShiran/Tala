@@ -5,6 +5,9 @@
 Complete rebuild of the v2 prototype. See [docs/from-v2.md](docs/from-v2.md).
 
 ### Added
+- One-line installers (`install.ps1`, `install.sh`) and a first-run setup wizard (`tala setup`):
+  hardware detection, default or advanced setup from a curated model catalog, memory estimates,
+  resource warnings, safe config merging with backup, and guided model downloads.
 - LangChain + LangGraph agent: route, executor loop (bounded), authorize (interrupt), run, summarize.
 - Pack format with logical tools, per-OS variants, typed parameters with constraints, conditional
   arguments, defaults, layered pack directories, strict loader and `tala packs validate`.

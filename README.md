@@ -30,22 +30,37 @@ Run it? [y/N]
 
 ## Quick start
 
-Requirements: Python 3.11+, [Ollama](https://ollama.com) running locally.
+You need [Ollama](https://ollama.com/download) running locally.
+
+**One-line install** (installs into an isolated environment, then starts the setup wizard):
+
+```powershell
+irm <URL-of-install.ps1> | iex                  # Windows
+```
+
+```sh
+curl -fsSL <URL-of-install.sh> | sh             # macOS / Linux
+```
+
+**From a clone:**
 
 ```bash
-ollama pull gemma4:e2b && ollama pull granite4.1:3b && ollama pull nomic-embed-text
-
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-
-tala doctor          # checks Ollama, models, packs, tool availability on this machine
+tala setup           # pick Default or Advanced; detects your hardware and warns about heavy models
 tala chat            # start talking
 ```
+
+`tala setup` offers a **default** setup (recommended for your hardware, nothing to decide) or an
+**advanced** one (choose models, context size, memory use, approval rules and speed options from curated
+sets, with warnings when a choice will strain your machine). It also offers itself the first time you run
+`tala chat`. Details: [docs/setup.md](docs/setup.md). `tala doctor` re-checks everything at any time.
 
 Other commands:
 
 | Command | Purpose |
 | --- | --- |
+| `tala setup [--default\|--advanced] [--check]` | First-run wizard: hardware-aware setup and model downloads |
 | `tala ask "..."` | One question, then exit |
 | `tala packs list [--all]` | Tools available here (and why others are not) |
 | `tala packs show NAME` | Full definition of a tool |

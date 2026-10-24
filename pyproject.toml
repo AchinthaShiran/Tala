@@ -75,7 +75,7 @@ name = "Layered architecture"
 type = "layers"
 layers = [
     "assistant.cli",
-    "assistant.bootstrap | assistant.evaluation",
+    "assistant.bootstrap | assistant.evaluation | assistant.setup",
     "assistant.service",
     "assistant.agent",
     "assistant.retrieval | assistant.safety | assistant.llm | assistant.memory",
