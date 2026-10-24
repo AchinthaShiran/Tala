@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "local-assistant"
+version = "3.0.0"
+description = "Local, OS-agnostic desktop AI assistant: YAML tool packs, LangGraph agent, Ollama."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "langchain-core>=1.0,<2",
+    "langchain-ollama>=1.0,<2",
+    "langgraph>=1.0,<2",
+    "langgraph-checkpoint-sqlite>=3.0,<4",
+    "pydantic>=2.7,<3",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "rich>=13.7",
+    "sqlite-vec>=0.1.6",
+    "platformdirs>=4.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-PyYAML",
+    "import-linter>=2.0",
+]
+
+[project.scripts]
+lpa = "assistant.cli.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/assistant"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "UP", "SIM", "S", "RUF"]
+ignore = ["S101", "E501"]  # asserts are fine in tests; ruff format owns line wrapping
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "B"]
+"src/assistant/tools/runner.py" = ["S603"]  # shell-less subprocess is the point of this module
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["sqlite_vec.*", "langchain_ollama.*"]
+ignore_missing_imports = true
+
+[tool.importlinter]
+root_package = "assistant"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layered architecture"
+type = "layers"
+layers = [
+    "assistant.cli",
+    "assistant.bootstrap | assistant.evaluation",
+    "assistant.service",
+    "assistant.agent",
+    "assistant.retrieval | assistant.safety | assistant.llm | assistant.memory",
+    "assistant.tools",
+    "assistant.packs",
+    "assistant.config",
+    "assistant.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain is pure"
+type = "forbidden"
+source_modules = ["assistant.domain"]
+forbidden_modules = ["langchain_core", "langgraph", "langchain_ollama", "sqlite3", "subprocess", "typer", "rich"]

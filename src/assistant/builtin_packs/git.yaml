@@ -1,0 +1,117 @@
+pack: git
+version: 1.0.0
+description: git commands (migrated from the v2 prototype).
+tools:
+- name: git_status
+  description: Show the working tree status.
+  risk: read_only
+  run:
+    any:
+      exe: git
+      args:
+      - status
+  examples:
+  - git status
+  - show the working tree status
+  keywords:
+  - git
+  - repository
+  - commit
+  category: source-control
+- name: git_log
+  description: Show commit logs.
+  risk: read_only
+  run:
+    any:
+      exe: git
+      args:
+      - log
+      - -n
+      - '10'
+      - --oneline
+  examples:
+  - git log
+  - show commit logs
+  keywords:
+  - git
+  - repository
+  - commit
+  category: source-control
+- name: git_diff
+  description: Show changes between commits, commit and working tree, etc.
+  risk: read_only
+  run:
+    any:
+      exe: git
+      args:
+      - diff
+  examples:
+  - git diff
+  - show changes between commits, commit and working tree, etc
+  keywords:
+  - git
+  - repository
+  - commit
+  category: source-control
+- name: git_add
+  description: Add file contents to the index.
+  risk: mutating
+  parameters:
+    path:
+      type: string
+      description: File or directory to add
+      max_length: 260
+  run:
+    any:
+      exe: git
+      args:
+      - add
+      - '{path}'
+  examples:
+  - git add
+  - add file contents to the index
+  keywords:
+  - git
+  - repository
+  - commit
+  category: source-control
+- name: git_commit
+  description: Record changes to the repository.
+  risk: mutating
+  parameters:
+    message:
+      type: string
+      description: Commit message
+      max_length: 300
+  run:
+    any:
+      exe: git
+      args:
+      - commit
+      - -m
+      - '{message}'
+  examples:
+  - git commit
+  - record changes to the repository
+  keywords:
+  - git
+  - repository
+  - commit
+  category: source-control
+- name: git_push
+  description: Update remote refs along with associated objects.
+  risk: destructive
+  run:
+    any:
+      exe: git
+      args:
+      - push
+  examples:
+  - git push
+  - update remote refs along with associated objects
+  keywords:
+  - git
+  - repository
+  - commit
+  category: source-control
+  confirm_message: This publishes your commits to the remote repository and is hard to undo.

@@ -1,0 +1,56 @@
+pack: processes
+version: 1.0.0
+description: Inspect and manage running processes.
+tools:
+  - name: list_processes
+    description: List running processes with their process IDs.
+    risk: read_only
+    category: processes
+    keywords: [process, task, running, programs, pid, cpu, apps]
+    examples:
+      - what is running on my computer
+      - list running processes
+      - which programs are using cpu
+    run:
+      windows: {exe: tasklist}
+      linux: {exe: ps, args: [-eo, "pid,comm,%cpu,%mem", --sort=-%cpu]}
+      macos: {exe: ps, args: [-Aro, "pid,comm,%cpu,%mem"]}
+
+  - name: find_process
+    description: Check whether a process with a given name is running and show its process ID.
+    risk: read_only
+    category: processes
+    keywords: [process, running, pid, find, is running]
+    examples:
+      - is chrome running
+      - find the process named notepad.exe
+    parameters:
+      name:
+        type: string
+        description: Process name (on Windows including .exe), e.g. chrome.exe
+        pattern: '^[A-Za-z0-9._ -]+$'
+        max_length: 80
+    run:
+      windows: {exe: tasklist, args: [/FI, "IMAGENAME eq {name}"]}
+      linux: {exe: pgrep, args: [-il, "{name}"]}
+      macos: {exe: pgrep, args: [-il, "{name}"]}
+
+  - name: kill_process
+    description: Terminate a process by its process ID. Use only when the user explicitly asks to stop it.
+    risk: destructive
+    confirm_message: This terminates the process immediately; unsaved work in it will be lost.
+    category: processes
+    keywords: [kill, terminate, stop, end task, close, force quit]
+    examples:
+      - kill process 1234
+      - end the task with pid 4321
+    parameters:
+      pid:
+        type: integer
+        description: Process ID to terminate (get it from list_processes)
+        minimum: 2
+        maximum: 4194304
+    run:
+      windows: {exe: taskkill, args: [/PID, "{pid}"]}
+      linux: {exe: kill, args: ["{pid}"]}
+      macos: {exe: kill, args: ["{pid}"]}

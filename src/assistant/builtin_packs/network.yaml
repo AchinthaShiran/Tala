@@ -1,0 +1,142 @@
+pack: network
+version: 1.0.0
+description: Network diagnostics that behave the same on Windows, Linux and macOS.
+tools:
+  - name: network_config
+    description: Show network adapters with their IP addresses, gateways and DNS servers.
+    risk: read_only
+    category: network
+    keywords: [ip, ip address, adapter, interface, gateway, dns, wifi, ethernet, lan]
+    examples:
+      - what is my ip address
+      - show my network configuration
+      - what is my default gateway
+    run:
+      windows: {exe: ipconfig, args: [/all]}
+      linux: {exe: ip, args: [addr]}
+      macos: {exe: ifconfig}
+
+  - name: ping_host
+    description: Check whether a host or IP address is reachable and measure round-trip time.
+    risk: read_only
+    category: network
+    keywords: [ping, reach, reachable, latency, online, connectivity, internet, up, down]
+    examples:
+      - ping google.com
+      - is 8.8.8.8 reachable
+      - check my internet connection
+    timeout: 45
+    parameters:
+      host:
+        type: string
+        description: Host name or IP address, e.g. example.com or 8.8.8.8
+        pattern: '^[A-Za-z0-9._:-]+$'
+        max_length: 253
+      count:
+        type: integer
+        description: Number of echo requests
+        default: 4
+        minimum: 1
+        maximum: 10
+    run:
+      windows: {exe: ping, args: [-n, "{count}", "{host}"]}
+      linux: {exe: ping, args: [-c, "{count}", "{host}"]}
+      macos: {exe: ping, args: [-c, "{count}", "{host}"]}
+
+  - name: trace_route
+    description: Show the network path (hops) from this computer to a host.
+    risk: read_only
+    category: network
+    keywords: [traceroute, tracert, hops, path, route to]
+    examples:
+      - trace the route to google.com
+      - how many hops to 1.1.1.1
+    timeout: 120
+    parameters:
+      host:
+        type: string
+        description: Host name or IP address
+        pattern: '^[A-Za-z0-9._:-]+$'
+        max_length: 253
+    run:
+      windows: {exe: tracert, args: [-d, -h, "20", "{host}"]}
+      linux: {exe: traceroute, args: [-n, -m, "20", "{host}"]}
+      macos: {exe: traceroute, args: [-n, -m, "20", "{host}"]}
+
+  - name: dns_lookup
+    description: Resolve a host name to IP addresses using DNS, optionally for a specific record type.
+    risk: read_only
+    category: network
+    keywords: [dns, nslookup, resolve, domain, record, mx, txt, name server]
+    examples:
+      - look up the ip of github.com
+      - what are the MX records for example.org
+    parameters:
+      host:
+        type: string
+        description: Domain name to resolve
+        pattern: '^[A-Za-z0-9._-]+$'
+        max_length: 253
+      record_type:
+        type: string
+        description: DNS record type
+        optional: true
+        enum: [A, AAAA, MX, TXT, NS, CNAME]
+    run:
+      any:
+        exe: nslookup
+        args:
+          - when: record_type
+            args: ["-type={record_type}"]
+          - "{host}"
+
+  - name: open_ports
+    description: List network connections and listening ports on this computer.
+    risk: read_only
+    category: network
+    keywords: [ports, listening, connections, netstat, sockets, established, tcp, udp]
+    examples:
+      - which ports are listening
+      - show active network connections
+      - what is using port 8080
+    run:
+      windows: {exe: netstat, args: [-ano]}
+      linux: {exe: ss, args: [-tulpn]}
+      macos: {exe: netstat, args: [-an]}
+
+  - name: arp_table
+    description: Show the ARP table mapping local IP addresses to MAC addresses of nearby devices.
+    risk: read_only
+    category: network
+    keywords: [arp, mac address, neighbours, devices on network, lan devices]
+    examples:
+      - which devices are on my network
+      - show the arp table
+    run:
+      any: {exe: arp, args: [-a]}
+
+  - name: routing_table
+    description: Show the IP routing table of this computer.
+    risk: read_only
+    category: network
+    keywords: [route, routing, routes, gateway, subnet]
+    examples:
+      - show the routing table
+      - what routes does this pc have
+    run:
+      windows: {exe: route, args: [print]}
+      linux: {exe: ip, args: [route]}
+      macos: {exe: netstat, args: [-rn]}
+
+  - name: mac_addresses
+    description: Show the MAC (hardware) addresses of network adapters.
+    risk: read_only
+    category: network
+    keywords: [mac, mac address, hardware address, adapter, physical address]
+    examples:
+      - what is my mac address
+      - list the mac addresses of my adapters
+    run:
+      windows: {exe: getmac, args: [/v]}
+      linux: {exe: ip, args: [-brief, link]}
+      macos: {exe: networksetup, args: [-listallhardwareports]}

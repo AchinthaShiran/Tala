@@ -1,0 +1,39 @@
+pack: wevtutil
+version: 1.0.0
+description: wevtutil commands (migrated from the v2 prototype).
+tools:
+- name: wevtutil_recent_events
+  description: Show the most recent events from the System or Application event log, newest first. Use
+    for "why did my laptop crash/restart" or "any recent errors".
+  risk: read_only
+  parameters:
+    log_name:
+      type: string
+      description: Event log to read
+      enum:
+      - Application
+      - System
+    count:
+      type: integer
+      description: Number of events
+      default: 20
+      minimum: 1
+      maximum: 1000
+  run:
+    windows:
+      exe: wevtutil
+      args:
+      - qe
+      - '{log_name}'
+      - /c:{count}
+      - /rd:true
+      - /f:text
+  examples:
+  - wevtutil recent events
+  - show the most recent events from the system or application event log, newest first
+  keywords:
+  - event
+  - log
+  - errors
+  - windows
+  category: logs

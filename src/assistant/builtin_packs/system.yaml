@@ -1,0 +1,132 @@
+pack: system
+version: 1.0.0
+description: Read-only facts about this computer (OS, memory, disk, uptime, battery, time).
+tools:
+  - name: os_info
+    description: Show operating system name, version and hardware summary of this computer.
+    risk: read_only
+    category: system
+    keywords: [operating system, windows, linux, macos, version, build, specs, hardware]
+    examples:
+      - what operating system am I running
+      - show system information
+      - which windows version is this
+    timeout: 90
+    run:
+      windows: {exe: systeminfo}
+      linux: {exe: uname, args: [-a]}
+      macos: {exe: sw_vers}
+
+  - name: memory_usage
+    description: Show total and free RAM (memory) on this computer.
+    risk: read_only
+    category: system
+    keywords: [ram, memory, free memory, available memory]
+    examples:
+      - how much memory is free
+      - how much ram do I have
+      - is my memory almost full
+    run:
+      windows:
+        exe: powershell
+        args:
+          - -NoProfile
+          - -NonInteractive
+          - -Command
+          - "Get-CimInstance Win32_OperatingSystem | Select-Object @{n='TotalGB';e={[math]::Round($_.TotalVisibleMemorySize/1MB,1)}}, @{n='FreeGB';e={[math]::Round($_.FreePhysicalMemory/1MB,1)}} | Format-List"
+      linux: {exe: free, args: [-h]}
+      macos: {exe: vm_stat}
+
+  - name: disk_free
+    description: Show used and free disk space for each drive or mounted volume.
+    risk: read_only
+    category: system
+    keywords: [disk, storage, space, drive, volume, free space, ssd, hdd, gigabytes]
+    examples:
+      - how much disk space is left
+      - how much free space does my C drive have
+      - is my storage almost full
+    run:
+      windows:
+        exe: powershell
+        args:
+          - -NoProfile
+          - -NonInteractive
+          - -Command
+          - "Get-PSDrive -PSProvider FileSystem | Select-Object Name, @{n='UsedGB';e={[math]::Round($_.Used/1GB,1)}}, @{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}} | Format-Table -AutoSize"
+      linux: {exe: df, args: [-h]}
+      macos: {exe: df, args: [-h]}
+
+  - name: uptime
+    description: Show how long this computer has been running since the last boot.
+    risk: read_only
+    category: system
+    keywords: [uptime, boot, restart, running time]
+    examples:
+      - how long has my computer been on
+      - when did this pc last restart
+    run:
+      windows:
+        exe: powershell
+        args:
+          - -NoProfile
+          - -NonInteractive
+          - -Command
+          - "$b=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime; \"Last boot: $b\"; \"Uptime: \" + ((Get-Date) - $b).ToString()"
+      linux: {exe: uptime}
+      macos: {exe: uptime}
+
+  - name: battery_status
+    description: Show the battery charge level of this computer (laptop) and whether it is charging; not for phones.
+    risk: read_only
+    category: power
+    keywords: [battery, charge, charging, power, laptop]
+    examples:
+      - what is my battery level
+      - is my laptop charging
+    run:
+      windows:
+        exe: powershell
+        args:
+          - -NoProfile
+          - -NonInteractive
+          - -Command
+          - "Get-CimInstance Win32_Battery | Select-Object EstimatedChargeRemaining, BatteryStatus | Format-List"
+      macos: {exe: pmset, args: [-g, batt]}
+
+  - name: current_time
+    description: Show the current local date and time of this computer.
+    risk: read_only
+    category: system
+    keywords: [time, date, clock, today, now]
+    examples:
+      - what time is it
+      - what is today's date
+    run:
+      windows:
+        exe: powershell
+        args: [-NoProfile, -NonInteractive, -Command, "Get-Date -Format 'dddd, yyyy-MM-dd HH:mm:ss zzz'"]
+      linux: {exe: date}
+      macos: {exe: date}
+
+  - name: hostname
+    description: Show the network name (hostname) of this computer.
+    risk: read_only
+    category: system
+    keywords: [hostname, computer name, machine name, pc name]
+    examples:
+      - what is my computer name
+      - show the hostname
+    run:
+      any: {exe: hostname}
+
+  - name: current_user
+    description: Show the user account that is running the assistant.
+    risk: read_only
+    category: system
+    keywords: [user, username, account, whoami, login]
+    examples:
+      - who am I logged in as
+      - what is my username
+    run:
+      any: {exe: whoami}

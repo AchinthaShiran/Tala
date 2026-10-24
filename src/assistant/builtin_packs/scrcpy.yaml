@@ -1,0 +1,21 @@
+pack: scrcpy
+version: 1.0.0
+description: scrcpy commands (migrated from the v2 prototype).
+tools:
+- name: scrcpy_version
+  description: 'Android device (adb): Show the scrcpy version.'
+  risk: read_only
+  run:
+    any:
+      exe: scrcpy
+      args:
+      - --version
+  examples:
+  - scrcpy version
+  - 'android device (adb): show the scrcpy version'
+  - scrcpy version on my android phone
+  keywords:
+  - android
+  - mirror
+  - scrcpy
+  category: android

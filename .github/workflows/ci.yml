@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Types
+        run: mypy
+      - name: Architecture contracts
+        run: lint-imports
+      - name: Pack quality gate
+        run: lpa packs validate --strict
+      - name: Tests
+        run: pytest --cov=assistant --cov-report=term-missing
+      - name: Retrieval regression (keyword mode)
+        run: lpa eval retrieval --min-recall 0.9

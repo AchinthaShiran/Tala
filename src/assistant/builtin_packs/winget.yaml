@@ -1,0 +1,157 @@
+pack: winget
+version: 1.0.0
+description: winget commands (migrated from the v2 prototype).
+tools:
+- name: winget_version
+  description: Show the winget version.
+  risk: read_only
+  run:
+    windows:
+      exe: winget
+      args:
+      - --version
+  examples:
+  - winget version
+  - show the winget version
+  keywords:
+  - winget
+  - install
+  - app
+  - software
+  - update
+  category: software
+- name: winget_list_installed
+  description: List all desktop applications and packages installed on this Windows computer (name, id,
+    version, available update).
+  risk: read_only
+  run:
+    windows:
+      exe: winget
+      args:
+      - list
+      - --accept-source-agreements
+      - --disable-interactivity
+  examples:
+  - winget list installed
+  - list all desktop applications and packages installed on this windows computer (name, id, version,
+    available update)
+  keywords:
+  - winget
+  - install
+  - app
+  - software
+  - update
+  category: software
+  timeout: 90
+- name: winget_list_upgradable
+  description: List all installed desktop apps that have a newer version available to upgrade. This does
+    not install anything, just lists them.
+  risk: read_only
+  run:
+    windows:
+      exe: winget
+      args:
+      - upgrade
+      - --accept-source-agreements
+      - --disable-interactivity
+  examples:
+  - winget list upgradable
+  - list all installed desktop apps that have a newer version available to upgrade
+  keywords:
+  - winget
+  - install
+  - app
+  - software
+  - update
+  category: software
+  timeout: 90
+- name: winget_search
+  description: Search the public winget package manager catalog for apps to install by name or keyword.
+  risk: read_only
+  parameters:
+    query:
+      type: string
+      description: App name or keyword
+      max_length: 100
+  run:
+    windows:
+      exe: winget
+      args:
+      - search
+      - '{query}'
+      - --accept-source-agreements
+      - --disable-interactivity
+  examples:
+  - winget search
+  - search the public winget package manager catalog for apps to install by name or keyword
+  keywords:
+  - winget
+  - install
+  - app
+  - software
+  - update
+  category: software
+  timeout: 60
+- name: winget_install
+  description: Install a desktop app by its exact winget package ID (find the exact ID with the search
+    command first). Use only when the user explicitly asks to install a program.
+  risk: mutating
+  parameters:
+    package_id:
+      type: string
+      description: Exact winget package id, e.g. Git.Git
+      pattern: ^[A-Za-z0-9._-]+$
+      max_length: 120
+  run:
+    windows:
+      exe: winget
+      args:
+      - install
+      - --id
+      - '{package_id}'
+      - --exact
+      - --accept-package-agreements
+      - --accept-source-agreements
+      - --disable-interactivity
+  examples:
+  - winget install
+  - install a desktop app by its exact winget package id (find the exact id with the search command first)
+  keywords:
+  - winget
+  - install
+  - app
+  - software
+  - update
+  category: software
+  timeout: 900
+- name: winget_upgrade_package
+  description: Upgrade one installed app to its latest version by exact package id.
+  risk: mutating
+  parameters:
+    package_id:
+      type: string
+      description: Exact winget package id, e.g. Git.Git
+      pattern: ^[A-Za-z0-9._-]+$
+      max_length: 120
+  run:
+    windows:
+      exe: winget
+      args:
+      - upgrade
+      - --id
+      - '{package_id}'
+      - --exact
+      - --accept-package-agreements
+      - --accept-source-agreements
+      - --disable-interactivity
+  examples:
+  - winget upgrade package
+  - upgrade one installed app to its latest version by exact package id
+  keywords:
+  - winget
+  - install
+  - app
+  - software
+  - update
+  category: software
+  timeout: 900

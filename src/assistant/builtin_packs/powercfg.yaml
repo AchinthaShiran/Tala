@@ -1,0 +1,62 @@
+pack: powercfg
+version: 1.0.0
+description: powercfg commands (migrated from the v2 prototype).
+tools:
+- name: powercfg_list_plans
+  description: List available power plans with their GUIDs; the active plan is marked.
+  risk: read_only
+  run:
+    windows:
+      exe: powercfg
+      args:
+      - /list
+  examples:
+  - powercfg list plans
+  - list available power plans with their guids; the active plan is marked
+  keywords:
+  - power
+  - battery
+  - plan
+  - sleep
+  category: power
+- name: powercfg_active_plan
+  description: Show the currently active power plan.
+  risk: read_only
+  run:
+    windows:
+      exe: powercfg
+      args:
+      - /getactivescheme
+  examples:
+  - powercfg active plan
+  - show the currently active power plan
+  keywords:
+  - power
+  - battery
+  - plan
+  - sleep
+  category: power
+- name: powercfg_set_active_plan
+  description: Switch the active power plan by GUID (get GUIDs from list_plans). Use only when the user
+    asks to change the power plan.
+  risk: mutating
+  parameters:
+    plan_guid:
+      type: string
+      description: Power plan GUID from list_plans
+      pattern: ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$
+  run:
+    windows:
+      exe: powercfg
+      args:
+      - /setactive
+      - '{plan_guid}'
+  examples:
+  - powercfg set active plan
+  - switch the active power plan by guid (get guids from list_plans)
+  keywords:
+  - power
+  - battery
+  - plan
+  - sleep
+  category: power

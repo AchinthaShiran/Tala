@@ -1,0 +1,22 @@
+pack: files
+version: 1.0.0
+description: Look at folders on this computer (read-only).
+tools:
+  - name: list_directory
+    description: List the files and folders inside a directory on this computer, for example the downloads or documents folder (Windows output is a recursive tree).
+    risk: read_only
+    category: files
+    keywords: [folder, directory, files, ls, dir, contents, tree, downloads, documents, desktop]
+    examples:
+      - what is in my downloads folder
+      - list the files in C:\Users
+      - show the contents of /var/log
+    parameters:
+      path:
+        type: string
+        description: Directory path, e.g. C:\Users\me\Downloads or /home/me
+        max_length: 260
+    run:
+      windows: {exe: tree, args: [/A, /F, "{path}"]}
+      linux: {exe: ls, args: [-la, --, "{path}"]}
+      macos: {exe: ls, args: [-la, --, "{path}"]}

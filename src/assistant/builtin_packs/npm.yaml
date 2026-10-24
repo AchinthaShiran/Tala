@@ -1,0 +1,173 @@
+pack: npm
+version: 1.0.0
+description: npm commands (migrated from the v2 prototype).
+tools:
+- name: npm_version
+  description: Show the npm version.
+  risk: read_only
+  run:
+    any:
+      exe: npm
+      args:
+      - --version
+  examples:
+  - npm version
+  - show the npm version
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+- name: npm_list_deps
+  description: List all top-level npm dependencies currently installed in this project.
+  risk: read_only
+  run:
+    any:
+      exe: npm
+      args:
+      - ls
+      - --depth=0
+      - --json
+  examples:
+  - npm list deps
+  - list all top-level npm dependencies currently installed in this project
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+- name: npm_outdated
+  description: Show outdated dependencies of the project.
+  risk: read_only
+  run:
+    any:
+      exe: npm
+      args:
+      - outdated
+      - --json
+  examples:
+  - npm outdated
+  - show outdated dependencies of the project
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+- name: npm_install
+  description: Execute 'npm install' to install all dependencies listed in the project's package.json
+    file.
+  risk: mutating
+  run:
+    any:
+      exe: npm
+      args:
+      - install
+      - --ignore-scripts
+  examples:
+  - npm install
+  - execute 'npm install' to install all dependencies listed in the project's package.json file
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+  timeout: 600
+- name: npm_add_package
+  description: Add a package to the project. Use only when the user names the package.
+  risk: mutating
+  parameters:
+    package:
+      type: string
+      description: Package name, optionally with @version
+      pattern: ^[A-Za-z0-9._@/:-]+$
+      max_length: 214
+  run:
+    any:
+      exe: npm
+      args:
+      - install
+      - '{package}'
+      - --ignore-scripts
+  examples:
+  - npm add package
+  - add a package to the project
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+  timeout: 600
+- name: npm_run_script
+  description: Run a predefined npm script from the project's package.json (e.g., 'build', 'start', 'lint',
+    'dev'). This executes the project's custom code.
+  risk: mutating
+  parameters:
+    script:
+      type: string
+      description: Script name from package.json
+      pattern: ^[A-Za-z0-9:_.-]+$
+      max_length: 80
+  run:
+    any:
+      exe: npm
+      args:
+      - run
+      - '{script}'
+  examples:
+  - npm run script
+  - run a predefined npm script from the project's package.json (e.g., 'build', 'start', 'lint', 'dev')
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+  timeout: 600
+- name: npm_test
+  description: Run `npm test` for the project.
+  risk: mutating
+  run:
+    any:
+      exe: npm
+      args:
+      - test
+  examples:
+  - npm test
+  - run `npm test` for the project
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+  timeout: 600
+- name: npm_uninstall
+  description: Remove a package from the project.
+  risk: mutating
+  parameters:
+    package:
+      type: string
+      description: Package
+      pattern: ^[A-Za-z0-9._@/:-]+$
+      max_length: 214
+  run:
+    any:
+      exe: npm
+      args:
+      - uninstall
+      - '{package}'
+  examples:
+  - npm uninstall
+  - remove a package from the project
+  keywords:
+  - npm
+  - node
+  - package
+  - javascript
+  category: javascript
+  timeout: 300

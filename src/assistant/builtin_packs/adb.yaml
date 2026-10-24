@@ -1,0 +1,932 @@
+pack: adb
+version: 1.0.0
+description: adb commands (migrated from the v2 prototype).
+tools:
+- name: adb_version
+  description: 'Android device (adb): Show the adb current version.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - version
+  examples:
+  - adb version
+  - 'android device (adb): show the adb current version'
+  - adb version on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_devices
+  description: 'Android device (adb): List connected Android devices with their state (device, unauthorized,
+    offline) and model details.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - devices
+      - -l
+  examples:
+  - adb devices
+  - 'android device (adb): list connected android devices with their state (device, unauthorized, offline)
+    and model details'
+  - adb devices on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_start_server
+  description: 'Android device (adb): Start the adb background server if it isn''t running.'
+  risk: mutating
+  run:
+    any:
+      exe: adb
+      args:
+      - start-server
+  examples:
+  - adb start server
+  - 'android device (adb): start the adb background server if it isn''t running'
+  - adb start server on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_kill_server
+  description: 'Android device (adb): Stop the adb background server (disconnects all devices until it
+    restarts).'
+  risk: mutating
+  run:
+    any:
+      exe: adb
+      args:
+      - kill-server
+  examples:
+  - adb kill server
+  - 'android device (adb): stop the adb background server (disconnects all devices until it restarts)'
+  - adb kill server on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_connect
+  description: 'Android device (adb): Connect to an Android device over Wi-Fi by IP and port. Use only
+    when the user gives the address.'
+  risk: mutating
+  parameters:
+    address:
+      type: string
+      description: IP address and port, e.g. 192.168.1.20:5555
+      pattern: ^[A-Za-z0-9.:\[\]-]+$
+      max_length: 80
+  run:
+    any:
+      exe: adb
+      args:
+      - connect
+      - '{address}'
+  examples:
+  - adb connect
+  - 'android device (adb): connect to an android device over wi-fi by ip and port'
+  - adb connect on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_disconnect
+  description: 'Android device (adb): Disconnect a Wi-Fi connected Android device by IP and port.'
+  risk: mutating
+  parameters:
+    address:
+      type: string
+      description: IP address and port, e.g. 192.168.1.20:5555
+      pattern: ^[A-Za-z0-9.:\[\]-]+$
+      max_length: 80
+  run:
+    any:
+      exe: adb
+      args:
+      - disconnect
+      - '{address}'
+  examples:
+  - adb disconnect
+  - 'android device (adb): disconnect a wi-fi connected android device by ip and port'
+  - adb disconnect on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_tcpip
+  description: 'Android device (adb): Switch the selected USB device to listen for adb over Wi-Fi on a
+    port (first step of wireless debugging).'
+  risk: mutating
+  parameters:
+    port:
+      type: integer
+      description: TCP port
+      default: 5555
+      minimum: 1
+      maximum: 65535
+  run:
+    any:
+      exe: adb
+      args:
+      - tcpip
+      - '{port}'
+  examples:
+  - adb tcpip
+  - 'android device (adb): switch the selected usb device to listen for adb over wi-fi on a port (first
+    step of wireless debugging)'
+  - adb tcpip on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_wait_for_device
+  description: 'Android device (adb): Wait until the selected device is connected and ready (up to 30
+    seconds).'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - wait-for-device
+  examples:
+  - adb wait for device
+  - 'android device (adb): wait until the selected device is connected and ready (up to 30 seconds)'
+  - adb wait for device on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  timeout: 20
+- name: adb_model
+  description: 'Android device (adb): Show the device model name.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - getprop
+      - ro.product.model
+  examples:
+  - adb model
+  - 'android device (adb): show the device model name'
+  - adb model on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_android_version
+  description: 'Android device (adb): Show the Android version of the device.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - getprop
+      - ro.build.version.release
+  examples:
+  - adb android version
+  - 'android device (adb): show the android version of the device'
+  - adb android version on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_get_property
+  description: 'Android device (adb): Read one Android system property (e.g. ro.product.manufacturer,
+    ro.build.version.sdk).'
+  risk: read_only
+  parameters:
+    property:
+      type: string
+      description: System property name
+      pattern: ^[A-Za-z0-9._]+$
+      max_length: 100
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - getprop
+      - '{property}'
+  examples:
+  - adb get property
+  - 'android device (adb): read one android system property (e.g'
+  - adb get property on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_battery
+  description: 'Android device (adb): Show battery level, charging state, temperature and health.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - dumpsys
+      - battery
+  examples:
+  - adb battery
+  - 'android device (adb): show battery level, charging state, temperature and health'
+  - adb battery on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_storage
+  description: 'Android device (adb): Show free and used internal storage on the device.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - df
+      - -h
+      - /data
+  examples:
+  - adb storage
+  - 'android device (adb): show free and used internal storage on the device'
+  - adb storage on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_memory
+  description: 'Android device (adb): Show the device''s RAM statistics.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - cat
+      - /proc/meminfo
+  examples:
+  - adb memory
+  - 'android device (adb): show the device''s ram statistics'
+  - adb memory on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_uptime
+  description: 'Android device (adb): Show how long the device has been running.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - uptime
+  examples:
+  - adb uptime
+  - 'android device (adb): show how long the device has been running'
+  - adb uptime on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_screen_size
+  description: 'Android device (adb): Show the device screen resolution.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - wm
+      - size
+  examples:
+  - adb screen size
+  - 'android device (adb): show the device screen resolution'
+  - adb screen size on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_device_ip
+  description: 'Android device (adb): Show the device''s IPv4 addresses (useful before enabling wireless
+    debugging).'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - ip
+      - '-4'
+      - addr
+      - show
+  examples:
+  - adb device ip
+  - 'android device (adb): show the device''s ipv4 addresses (useful before enabling wireless debugging)'
+  - adb device ip on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_list_packages_user
+  description: 'Android device (adb): List apps the user installed (third-party packages).'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - pm
+      - list
+      - packages
+      - '-3'
+  examples:
+  - adb list packages user
+  - 'android device (adb): list apps the user installed (third-party packages)'
+  - adb list packages user on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_find_package
+  description: 'Android device (adb): Search installed package names containing some text, e.g. chrome.'
+  risk: read_only
+  parameters:
+    filter:
+      type: string
+      description: Text to look for in package names
+      pattern: ^[A-Za-z0-9._@/:-]+$
+      max_length: 100
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - pm
+      - list
+      - packages
+      - '{filter}'
+  examples:
+  - adb find package
+  - 'android device (adb): search installed package names containing some text, e.g'
+  - adb find package on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_package_info
+  description: 'Android device (adb): Show details of one installed package (version, permissions, install
+    time). Output is long and truncated.'
+  risk: read_only
+  parameters:
+    package_name:
+      type: string
+      description: Android package name, e.g. com.android.chrome
+      pattern: ^[A-Za-z0-9._]+$
+      max_length: 200
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - dumpsys
+      - package
+      - '{package_name}'
+  examples:
+  - adb package info
+  - 'android device (adb): show details of one installed package (version, permissions, install time)'
+  - adb package info on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_logcat_recent
+  description: 'Android device (adb): Show the most recent device log lines at or above a level (V, D,
+    I, W, E, F). May contain app data.'
+  risk: read_only
+  parameters:
+    lines:
+      type: integer
+      description: Number of log lines
+      default: 100
+      minimum: 1
+      maximum: 1000
+    level:
+      type: string
+      description: Minimum log level
+      default: W
+      enum:
+      - V
+      - D
+      - I
+      - W
+      - E
+      - F
+  run:
+    any:
+      exe: adb
+      args:
+      - logcat
+      - -d
+      - -v
+      - time
+      - -t
+      - '{lines}'
+      - '*:{level}'
+  examples:
+  - adb logcat recent
+  - 'android device (adb): show the most recent device log lines at or above a level (v, d, i, w, e, f)'
+  - adb logcat recent on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_clear_logcat
+  description: 'Android device (adb): Clear the device''s log buffers.'
+  risk: mutating
+  run:
+    any:
+      exe: adb
+      args:
+      - logcat
+      - -c
+  examples:
+  - adb clear logcat
+  - 'android device (adb): clear the device''s log buffers'
+  - adb clear logcat on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_list_files
+  description: 'Android device (adb): List files in a folder on the device''s shared storage (under /sdcard,
+    /storage/emulated/0 or /data/local/tmp).'
+  risk: read_only
+  parameters:
+    remote_dir:
+      type: string
+      description: Folder on the device, e.g. /sdcard/Download
+      pattern: ^[A-Za-z0-9._/@+-]+$
+      max_length: 260
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - ls
+      - -l
+      - '{remote_dir}'
+  examples:
+  - adb list files
+  - 'android device (adb): list files in a folder on the device''s shared storage (under /sdcard, /storage/emulated/0
+    or /data/local/tmp)'
+  - adb list files on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_pull_file
+  description: 'Android device (adb): Copy a file or folder from the device to a folder on this laptop.'
+  risk: mutating
+  parameters:
+    remote_path:
+      type: string
+      description: File or folder on the device, e.g. /sdcard/DCIM/Camera/photo.jpg
+      pattern: ^[A-Za-z0-9._/@+-]+$
+      max_length: 260
+    local_dir:
+      type: string
+      description: Destination folder on this laptop
+      max_length: 260
+  run:
+    any:
+      exe: adb
+      args:
+      - pull
+      - '{remote_path}'
+      - '{local_dir}'
+  examples:
+  - adb pull file
+  - 'android device (adb): copy a file or folder from the device to a folder on this laptop'
+  - adb pull file on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  timeout: 300
+- name: adb_push_file
+  description: 'Android device (adb): Copy a file from this laptop to the device''s shared storage.'
+  risk: mutating
+  parameters:
+    local_path:
+      type: string
+      description: File on this laptop
+      max_length: 260
+    remote_dir:
+      type: string
+      description: Destination folder on the device, e.g. /sdcard/Download/
+      pattern: ^[A-Za-z0-9._/@+-]+$
+      max_length: 260
+  run:
+    any:
+      exe: adb
+      args:
+      - push
+      - '{local_path}'
+      - '{remote_dir}'
+  examples:
+  - adb push file
+  - 'android device (adb): copy a file from this laptop to the device''s shared storage'
+  - adb push file on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  timeout: 300
+- name: adb_delete_file
+  description: 'Android device (adb): Delete one file on the device''s shared storage. Folders are not
+    deleted. Use only when the user explicitly asks.'
+  risk: destructive
+  parameters:
+    remote_file:
+      type: string
+      description: File on the device, e.g. /sdcard/Download/old.zip
+      pattern: ^[A-Za-z0-9._/@+-]+$
+      max_length: 260
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - rm
+      - '{remote_file}'
+  examples:
+  - adb delete file
+  - 'android device (adb): delete one file on the device''s shared storage'
+  - adb delete file on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  confirm_message: This permanently deletes a file on the connected Android device.
+- name: adb_screenshot
+  description: 'Android device (adb): Take a screenshot and save it on the device as /sdcard/assistant_screenshot.png.
+    Then use pull_file to copy it to the laptop.'
+  risk: mutating
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - screencap
+      - -p
+      - /sdcard/assistant_screenshot.png
+  examples:
+  - adb screenshot
+  - 'android device (adb): take a screenshot and save it on the device as /sdcard/assistant_screenshot.png'
+  - adb screenshot on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  timeout: 30
+- name: adb_install_apk
+  description: 'Android device (adb): Install an APK file from this laptop onto the device. Only when
+    the user names the file.'
+  risk: mutating
+  parameters:
+    apk_path:
+      type: string
+      description: APK file on this laptop
+      pattern: (?i)\.apk$
+      max_length: 260
+    replace:
+      type: boolean
+      description: Replace the app if it is already installed, keeping its data
+      default: true
+  run:
+    any:
+      exe: adb
+      args:
+      - install
+      - when: replace
+        args:
+        - -r
+      - '{apk_path}'
+  examples:
+  - adb install apk
+  - 'android device (adb): install an apk file from this laptop onto the device'
+  - adb install apk on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  timeout: 300
+- name: adb_uninstall_app
+  description: 'Android device (adb): Uninstall an app from the device by package name. Removes its data
+    unless keep_data is true. Use only when explicitly asked.'
+  risk: destructive
+  parameters:
+    package_name:
+      type: string
+      description: Android package name, e.g. com.example.app
+      pattern: ^[A-Za-z0-9._]+$
+      max_length: 200
+    keep_data:
+      type: boolean
+      description: Keep the app's data and cache after removal
+      default: false
+  run:
+    any:
+      exe: adb
+      args:
+      - uninstall
+      - when: keep_data
+        args:
+        - -k
+      - '{package_name}'
+  examples:
+  - adb uninstall app
+  - 'android device (adb): uninstall an app from the device by package name'
+  - adb uninstall app on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  confirm_message: This uninstalls an app from the Android device and may delete its data.
+- name: adb_clear_app_data
+  description: 'Android device (adb): Erase all data and cache of an app on the device (like a fresh install).
+    Use only when explicitly asked.'
+  risk: destructive
+  parameters:
+    package_name:
+      type: string
+      description: Android package name
+      pattern: ^[A-Za-z0-9._]+$
+      max_length: 200
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - pm
+      - clear
+      - '{package_name}'
+  examples:
+  - adb clear app data
+  - 'android device (adb): erase all data and cache of an app on the device (like a fresh install)'
+  - adb clear app data on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+  confirm_message: This erases all data and settings of an app on the Android device.
+- name: adb_force_stop_app
+  description: 'Android device (adb): Force-stop a running app on the device.'
+  risk: mutating
+  parameters:
+    package_name:
+      type: string
+      description: Android package name
+      pattern: ^[A-Za-z0-9._]+$
+      max_length: 200
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - am
+      - force-stop
+      - '{package_name}'
+  examples:
+  - adb force stop app
+  - 'android device (adb): force-stop a running app on the device'
+  - adb force stop app on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_launch_app
+  description: 'Android device (adb): Launch an installed app on the device by package name.'
+  risk: mutating
+  parameters:
+    package_name:
+      type: string
+      description: Android package name
+      pattern: ^[A-Za-z0-9._]+$
+      max_length: 200
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - monkey
+      - -p
+      - '{package_name}'
+      - -c
+      - android.intent.category.LAUNCHER
+      - '1'
+  examples:
+  - adb launch app
+  - 'android device (adb): launch an installed app on the device by package name'
+  - adb launch app on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_press_key
+  description: 'Android device (adb): Press a hardware or navigation key on the device (home, back, volume,
+    wake, sleep).'
+  risk: mutating
+  parameters:
+    key:
+      type: string
+      description: Key to press
+      enum:
+      - HOME
+      - BACK
+      - POWER
+      - VOLUME_UP
+      - VOLUME_DOWN
+      - WAKEUP
+      - SLEEP
+      - MENU
+      - ENTER
+      - APP_SWITCH
+  run:
+    any:
+      exe: adb
+      args:
+      - shell
+      - input
+      - keyevent
+      - KEYCODE_{key}
+  examples:
+  - adb press key
+  - 'android device (adb): press a hardware or navigation key on the device (home, back, volume, wake,
+    sleep)'
+  - adb press key on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_reverse_port
+  description: 'Android device (adb): Forward a device port to a port on this laptop (adb reverse), e.g.
+    8081 for React Native''s Metro bundler.'
+  risk: mutating
+  parameters:
+    device_port:
+      type: integer
+      description: Port the device connects to
+      minimum: 1
+      maximum: 65535
+    host_port:
+      type: integer
+      description: Port on this laptop
+      minimum: 1
+      maximum: 65535
+  run:
+    any:
+      exe: adb
+      args:
+      - reverse
+      - tcp:{device_port}
+      - tcp:{host_port}
+  examples:
+  - adb reverse port
+  - 'android device (adb): forward a device port to a port on this laptop (adb reverse), e.g'
+  - adb reverse port on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_list_reversed
+  description: 'Android device (adb): List active adb reverse port forwards for the device.'
+  risk: read_only
+  run:
+    any:
+      exe: adb
+      args:
+      - reverse
+      - --list
+  examples:
+  - adb list reversed
+  - 'android device (adb): list active adb reverse port forwards for the device'
+  - adb list reversed on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_reboot
+  description: 'Android device (adb): Reboot the Android device. Use only when explicitly asked.'
+  risk: mutating
+  run:
+    any:
+      exe: adb
+      args:
+      - reboot
+  examples:
+  - adb reboot
+  - 'android device (adb): reboot the android device'
+  - adb reboot on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android
+- name: adb_reboot_bootloader
+  description: 'Android device (adb): Reboot the device into the bootloader (fastboot mode). Use only
+    when explicitly asked.'
+  risk: mutating
+  run:
+    any:
+      exe: adb
+      args:
+      - reboot
+      - bootloader
+  examples:
+  - adb reboot bootloader
+  - 'android device (adb): reboot the device into the bootloader (fastboot mode)'
+  - adb reboot bootloader on my android phone
+  keywords:
+  - android
+  - phone
+  - device
+  - adb
+  category: android

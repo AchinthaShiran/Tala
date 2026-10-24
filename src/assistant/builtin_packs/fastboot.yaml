@@ -1,0 +1,101 @@
+pack: fastboot
+version: 1.0.0
+description: fastboot commands (migrated from the v2 prototype).
+tools:
+- name: fastboot_version
+  description: 'Android device (adb): Show the fastboot version.'
+  risk: read_only
+  run:
+    any:
+      exe: fastboot
+      args:
+      - --version
+  examples:
+  - fastboot version
+  - 'android device (adb): show the fastboot version'
+  - fastboot version on my android phone
+  keywords:
+  - android
+  - bootloader
+  - fastboot
+  category: android
+- name: fastboot_devices
+  description: 'Android device (adb): List devices currently in fastboot (bootloader) mode.'
+  risk: read_only
+  run:
+    any:
+      exe: fastboot
+      args:
+      - devices
+  examples:
+  - fastboot devices
+  - 'android device (adb): list devices currently in fastboot (bootloader) mode'
+  - fastboot devices on my android phone
+  keywords:
+  - android
+  - bootloader
+  - fastboot
+  category: android
+- name: fastboot_getvar
+  description: 'Android device (adb): Read one bootloader variable such as the product name, bootloader
+    version, active slot or whether the bootloader is unlocked.'
+  risk: read_only
+  parameters:
+    variable:
+      type: string
+      description: Bootloader variable to read
+      pattern: ^[A-Za-z0-9._-]+$
+      max_length: 80
+  run:
+    any:
+      exe: fastboot
+      args:
+      - getvar
+      - '{variable}'
+  examples:
+  - fastboot getvar
+  - 'android device (adb): read one bootloader variable such as the product name, bootloader version,
+    active slot or whether the bootloader is unlocked'
+  - fastboot getvar on my android phone
+  keywords:
+  - android
+  - bootloader
+  - fastboot
+  category: android
+- name: fastboot_reboot
+  description: 'Android device (adb): Reboot the device out of fastboot mode into Android. Use only when
+    explicitly asked.'
+  risk: mutating
+  run:
+    any:
+      exe: fastboot
+      args:
+      - reboot
+  examples:
+  - fastboot reboot
+  - 'android device (adb): reboot the device out of fastboot mode into android'
+  - fastboot reboot on my android phone
+  keywords:
+  - android
+  - bootloader
+  - fastboot
+  category: android
+- name: fastboot_reboot_bootloader
+  description: 'Android device (adb): Reboot the device back into the bootloader. Use only when explicitly
+    asked.'
+  risk: mutating
+  run:
+    any:
+      exe: fastboot
+      args:
+      - reboot
+      - bootloader
+  examples:
+  - fastboot reboot bootloader
+  - 'android device (adb): reboot the device back into the bootloader'
+  - fastboot reboot bootloader on my android phone
+  keywords:
+  - android
+  - bootloader
+  - fastboot
+  category: android

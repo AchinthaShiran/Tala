@@ -1,0 +1,60 @@
+# Golden set: request -> acceptable tool(s), or `none` for plain conversation.
+# Add a case whenever the assistant picks the wrong tool; run `lpa eval run`.
+cases:
+  - {query: how much disk space is left, expect: disk_free}
+  - {query: is my C drive almost full, expect: disk_free}
+  - {query: how much free storage does my computer have, expect: disk_free}
+  - {query: how much ram is free, expect: memory_usage}
+  - {query: how much memory do I have, expect: memory_usage}
+  - {query: what windows version am I running, expect: os_info}
+  - {query: show me my system information, expect: os_info}
+  - {query: how long has my pc been on, expect: uptime}
+  - {query: when was my last reboot, expect: uptime}
+  - {query: what is my battery level, expect: battery_status}
+  - {query: is the laptop charging, expect: battery_status}
+  - {query: what time is it, expect: current_time}
+  - {query: what is today's date, expect: current_time}
+  - {query: what is my computer name, expect: hostname}
+  - {query: who am I logged in as, expect: current_user}
+  - {query: what programs are running, expect: list_processes}
+  - {query: list running processes, expect: list_processes}
+  - {query: is chrome running, expect: [find_process, list_processes]}
+  - {query: kill process 4321, expect: kill_process, args: {pid: 4321}}
+  - {query: what is my ip address, expect: network_config}
+  - {query: show my network adapters, expect: [network_config, mac_addresses]}
+  - {query: ping google.com, expect: ping_host, args: {host: google.com}}
+  - {query: can you reach 8.8.8.8, expect: ping_host}
+  - {query: is my internet working, expect: ping_host}
+  - {query: trace the route to github.com, expect: trace_route, args: {host: github.com}}
+  - {query: look up the dns records for example.com, expect: dns_lookup}
+  - {query: which ports are listening, expect: open_ports}
+  - {query: what is using port 8080, expect: open_ports}
+  - {query: which devices are on my local network, expect: arp_table}
+  - {query: show the routing table, expect: routing_table}
+  - {query: what is my mac address, expect: mac_addresses}
+  - {query: list the files in my downloads folder, expect: list_directory}
+  - {query: git status of this repo, expect: git_status}
+  - {query: what changed in my repository, expect: [git_status, git_diff]}
+  - {query: show recent commits, expect: git_log}
+  - {query: commit my changes with message fix typo, expect: git_commit}
+  - {query: push my commits to the remote, expect: git_push}
+  - {query: which docker containers are running, expect: docker_ps}
+  - {query: stop the docker container web, expect: docker_stop, args: {container: web}}
+  - {query: which npm packages are outdated, expect: npm_outdated}
+  - {query: search winget for vscode, expect: winget_search}
+  - {query: list connected android devices, expect: adb_devices}
+  - {query: what is the battery level of my android phone, expect: adb_battery}
+  - {query: take a screenshot of my phone, expect: adb_screenshot}
+  - {query: install app.apk on my phone, expect: adb_install_apk}
+  - {query: which power plan is active, expect: powercfg_active_plan}
+  - {query: show recent windows system event log entries, expect: wevtutil_recent_events}
+  - {query: list scheduled tasks, expect: schtasks_list_tasks}
+  # Conversation: no tool should be proposed.
+  - {query: hello there, expect: none}
+  - {query: tell me a joke, expect: none}
+  - {query: thanks a lot, expect: none}
+  - {query: what is the capital of France, expect: none}
+  - {query: write a short poem about the sea, expect: none}
+  - {query: how are you today, expect: none}
+  - {query: explain what a neural network is, expect: none}
+  - {query: what is the weather like in Paris, expect: none}

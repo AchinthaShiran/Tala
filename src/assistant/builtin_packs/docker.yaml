@@ -1,0 +1,124 @@
+pack: docker
+version: 1.0.0
+description: docker commands (migrated from the v2 prototype).
+tools:
+- name: docker_ps
+  description: List currently active and running docker containers.
+  risk: read_only
+  run:
+    any:
+      exe: docker
+      args:
+      - ps
+  examples:
+  - docker ps
+  - list currently active and running docker containers
+  keywords:
+  - docker
+  - container
+  - image
+  category: containers
+- name: docker_ps_all
+  description: List all docker containers on the system (both running and stopped).
+  risk: read_only
+  run:
+    any:
+      exe: docker
+      args:
+      - ps
+      - -a
+  examples:
+  - docker ps all
+  - list all docker containers on the system (both running and stopped)
+  keywords:
+  - docker
+  - container
+  - image
+  category: containers
+- name: docker_images
+  description: List images.
+  risk: read_only
+  run:
+    any:
+      exe: docker
+      args:
+      - images
+  examples:
+  - docker images
+  - list images
+  keywords:
+  - docker
+  - container
+  - image
+  category: containers
+- name: docker_logs
+  description: Fetch the recent stdout and stderr logs of a specific docker container.
+  risk: read_only
+  parameters:
+    container:
+      type: string
+      description: Container name or ID
+      pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]*$
+      max_length: 128
+  run:
+    any:
+      exe: docker
+      args:
+      - logs
+      - --tail
+      - '50'
+      - '{container}'
+  examples:
+  - docker logs
+  - fetch the recent stdout and stderr logs of a specific docker container
+  keywords:
+  - docker
+  - container
+  - image
+  category: containers
+- name: docker_stop
+  description: Stop one or more running containers.
+  risk: mutating
+  parameters:
+    container:
+      type: string
+      description: Container name or ID
+      pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]*$
+      max_length: 128
+  run:
+    any:
+      exe: docker
+      args:
+      - stop
+      - '{container}'
+  examples:
+  - docker stop
+  - stop one or more running containers
+  keywords:
+  - docker
+  - container
+  - image
+  category: containers
+- name: docker_start
+  description: Start one or more stopped containers.
+  risk: mutating
+  parameters:
+    container:
+      type: string
+      description: Container name or ID
+      pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]*$
+      max_length: 128
+  run:
+    any:
+      exe: docker
+      args:
+      - start
+      - '{container}'
+  examples:
+  - docker start
+  - start one or more stopped containers
+  keywords:
+  - docker
+  - container
+  - image
+  category: containers

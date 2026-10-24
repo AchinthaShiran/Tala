@@ -1,0 +1,50 @@
+pack: schtasks
+version: 1.0.0
+description: schtasks commands (migrated from the v2 prototype).
+tools:
+- name: schtasks_list_tasks
+  description: List all scheduled tasks with next run time and status (CSV). Large output is truncated.
+  risk: read_only
+  run:
+    windows:
+      exe: schtasks
+      args:
+      - /Query
+      - /FO
+      - CSV
+      - /NH
+  examples:
+  - schtasks list tasks
+  - list all scheduled tasks with next run time and status (csv)
+  keywords:
+  - scheduled
+  - task
+  - cron
+  category: automation
+- name: schtasks_describe_task
+  description: Show full details of one scheduled task (schedule, action, last result).
+  risk: read_only
+  parameters:
+    task_name:
+      type: string
+      description: Task path and name, e.g. \Microsoft\Windows\Defrag\ScheduledDefrag
+      pattern: ^[\\A-Za-z0-9 ._-]+$
+      max_length: 260
+  run:
+    windows:
+      exe: schtasks
+      args:
+      - /Query
+      - /TN
+      - '{task_name}'
+      - /V
+      - /FO
+      - LIST
+  examples:
+  - schtasks describe task
+  - show full details of one scheduled task (schedule, action, last result)
+  keywords:
+  - scheduled
+  - task
+  - cron
+  category: automation

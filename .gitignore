@@ -12,3 +12,5 @@ build/
 *.db
 *.db-*
 .assistant/data/
+.import_linter_cache/
+.assistant-home/
