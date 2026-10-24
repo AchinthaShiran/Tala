@@ -1,0 +1,46 @@
+pack: web
+version: 1.0.0
+description: Fetch web pages and files with curl.
+tools:
+- name: http_headers
+  description: Show the HTTP response headers and status of a URL (is a website up, redirects, server).
+  risk: read_only
+  category: network
+  keywords: [http, https, headers, status code, website up, url, curl, redirect, head request]
+  examples: ['is https://example.com up', 'show the http headers of https://github.com', what status code
+      does this url return]
+  timeout: 30
+  parameters:
+    url: &id001 {type: string, description: Full http(s) URL, pattern: '^https?://[A-Za-z0-9._~:/?#@!&()*+,;=%\[\]-]+$',
+      max_length: 2000}
+  run:
+    any:
+      exe: curl
+      args: [-sSI, -L, --max-time, '15', '{url}']
+- name: http_get
+  description: Fetch a web page or API endpoint (GET request) and show the response text.
+  risk: read_only
+  category: network
+  keywords: [http, get, fetch, url, curl, api, web page, download text, request]
+  examples: ['fetch https://example.com', 'call the api at https://api.github.com/zen']
+  timeout: 40
+  parameters:
+    url: *id001
+  run:
+    any:
+      exe: curl
+      args: [-sS, -L, --max-time, '20', --max-filesize, '1000000', '{url}']
+- name: download_file
+  description: Download a file from a URL to a local path. An existing file at that path is overwritten.
+  risk: mutating
+  category: network
+  keywords: [download, save, url, curl, fetch file, get file, wget]
+  examples: ['download https://example.com/tool.zip as tool.zip', save the file at this url to downloads]
+  timeout: 660
+  parameters:
+    url: *id001
+    output: {type: string, description: Local file to save to, pattern: '^[^''"`\r\n]+$', max_length: 260}
+  run:
+    any:
+      exe: curl
+      args: [-sSL, --max-time, '600', -o, '{output}', '{url}']

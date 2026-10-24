@@ -1,0 +1,34 @@
+pack: ssh
+version: 1.0.0
+description: Reach other machines over SSH (key-based, never prompts for a password).
+tools:
+- name: ssh_test_connection
+  description: Test whether an SSH login to a host works with your keys.
+  risk: read_only
+  category: network
+  keywords: [ssh, login, connect, remote, server, test connection, key]
+  examples: [can I ssh into pi@192.168.1.20, test the ssh connection to my server]
+  timeout: 30
+  parameters:
+    target: &id001 {type: string, description: Target as host or user@host, pattern: '^[A-Za-z0-9._@:-]+$',
+      max_length: 253}
+  run:
+    any:
+      exe: ssh
+      args: [-o, BatchMode=yes, -o, ConnectTimeout=8, '{target}', exit]
+- name: ssh_run_command
+  description: Run a simple command on a remote machine over SSH and show its output.
+  risk: destructive
+  category: network
+  keywords: [ssh, remote, run on server, execute remotely, remote command]
+  examples: [run uptime on pi@192.168.1.20, ssh to my server and check df -h]
+  confirm_message: This runs a command on another machine with that account's permissions.
+  timeout: 60
+  parameters:
+    target: *id001
+    command: {type: string, description: 'Command with plain arguments; no pipes, quotes or shell operators',
+      pattern: '^[A-Za-z0-9 ._/=:@+,~-]+$', max_length: 200}
+  run:
+    any:
+      exe: ssh
+      args: [-o, BatchMode=yes, -o, ConnectTimeout=8, '{target}', '{command}']

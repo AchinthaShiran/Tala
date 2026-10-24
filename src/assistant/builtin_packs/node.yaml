@@ -1,0 +1,56 @@
+pack: node
+version: 1.0.0
+description: Node.js, Yarn and pnpm (npm has its own pack).
+tools:
+- name: node_version
+  description: Show the installed Node.js version.
+  risk: read_only
+  category: javascript
+  keywords: [node, nodejs, version, javascript]
+  examples: [what node version do I have, node version]
+  run:
+    any:
+      exe: node
+      args: [--version]
+- name: yarn_version
+  description: Show the installed Yarn version.
+  risk: read_only
+  category: javascript
+  keywords: [yarn, version, javascript]
+  examples: [yarn version, is yarn installed]
+  run:
+    any:
+      exe: yarn
+      args: [--version]
+- name: yarn_install
+  description: Install the project's dependencies with Yarn (install scripts are skipped).
+  risk: mutating
+  category: javascript
+  keywords: [yarn, install, dependencies, javascript]
+  examples: [yarn install, install dependencies with yarn]
+  timeout: 900
+  run:
+    any:
+      exe: yarn
+      args: [install, --ignore-scripts]
+- name: pnpm_version
+  description: Show the installed pnpm version.
+  risk: read_only
+  category: javascript
+  keywords: [pnpm, version, javascript]
+  examples: [pnpm version, is pnpm installed]
+  run:
+    any:
+      exe: pnpm
+      args: [--version]
+- name: pnpm_install
+  description: Install the project's dependencies with pnpm (install scripts are skipped).
+  risk: mutating
+  category: javascript
+  keywords: [pnpm, install, dependencies, javascript]
+  examples: [pnpm install, install dependencies with pnpm]
+  timeout: 900
+  run:
+    any:
+      exe: pnpm
+      args: [install, --ignore-scripts]

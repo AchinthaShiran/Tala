@@ -51,6 +51,55 @@ cases:
   - {query: which power plan is active, expect: powercfg_active_plan}
   - {query: show recent windows system event log entries, expect: wevtutil_recent_events}
   - {query: list scheduled tasks, expect: schtasks_list_tasks}
+  # Files
+  - {query: read the file notes.txt, expect: read_file}
+  - {query: show me the contents of app.log, expect: [read_file, read_file_tail]}
+  - {query: show the last lines of server.log, expect: read_file_tail}
+  - {query: what are the properties of report.pdf, expect: file_properties}
+  - {query: when was this file last modified, expect: file_properties}
+  - {query: find the file config.yaml, expect: find_files}
+  - {query: which files contain the word TODO, expect: search_in_files}
+  - {query: what is the sha256 of installer.exe, expect: file_hash}
+  - {query: how big is my downloads folder, expect: folder_size}
+  - {query: copy report.pdf to the desktop, expect: copy_file}
+  - {query: rename old.txt to new.txt, expect: move_file}
+  - {query: delete the file old.log, expect: delete_file}
+  - {query: unzip backup.zip, expect: extract_archive}
+  - {query: compress the logs folder, expect: create_archive}
+  # Languages and build tools
+  - {query: what python version do I have, expect: python_version}
+  - {query: which python packages are installed, expect: pip_list}
+  - {query: pip install requests, expect: pip_install}
+  - {query: create a python virtual environment, expect: create_venv}
+  - {query: run the python tests, expect: run_pytest}
+  - {query: what java version do I have, expect: java_version}
+  - {query: build the maven project, expect: [maven_package, maven_test]}
+  - {query: run the gradle tests, expect: gradle_test}
+  - {query: yarn install, expect: yarn_install}
+  - {query: go test, expect: go_test}
+  - {query: cargo build, expect: cargo_build}
+  - {query: build the dotnet project, expect: dotnet_build}
+  # Networking
+  - {query: is https://example.com up, expect: http_headers}
+  - {query: download https://example.com/tool.zip, expect: download_file}
+  - {query: is port 443 open on example.com, expect: port_check}
+  - {query: which wifi am I connected to, expect: wifi_status}
+  - {query: flush the dns cache, expect: flush_dns}
+  - {query: which dns servers am I using, expect: dns_servers}
+  - {query: can I ssh into pi@192.168.1.20, expect: ssh_test_connection}
+  - {query: is the firewall on, expect: firewall_status}
+  # System
+  - {query: is the docker service running, expect: service_status}
+  - {query: restart the nginx service, expect: service_restart}
+  - {query: which services are running, expect: service_list}
+  - {query: show recent system errors, expect: system_errors_recent}
+  - {query: brew install wget, expect: brew_install}
+  - {query: apt search nginx, expect: apt_search}
+  - {query: did the last github action pass, expect: gh_run_list}
+  - {query: list open pull requests, expect: gh_pr_list}
+  - {query: which git branch am I on, expect: git_branches}
+  - {query: discard all my local changes, expect: git_reset_hard}
+  - {query: git pull, expect: git_pull}
   # Conversation: no tool should be proposed.
   - {query: hello there, expect: none}
   - {query: tell me a joke, expect: none}

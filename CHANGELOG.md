@@ -11,8 +11,10 @@ Complete rebuild of the v2 prototype. See [docs/from-v2.md](docs/from-v2.md).
 - LangChain + LangGraph agent: route, executor loop (bounded), authorize (interrupt), run, summarize.
 - Pack format with logical tools, per-OS variants, typed parameters with constraints, conditional
   arguments, defaults, layered pack directories, strict loader and `tala packs validate`.
-- 95 builtin tools: system, processes, network, files (cross-platform) plus git, docker, adb, fastboot,
-  npm, winget, powercfg, schtasks, wevtutil.
+- About 200 builtin tools: system, processes, network and files (cross-platform) plus git (and GitHub CLI),
+  docker, adb, fastboot, Python/pip/uv, Java/Maven/Gradle, Node/Yarn/pnpm, .NET/Go/Rust/Ruby, curl, SSH,
+  firewall, services, apt/Homebrew/Chocolatey, system logs, file reading, searching, hashing, copying
+  and archiving, and winget, powercfg, schtasks and wevtutil on Windows.
 - Hybrid tool retrieval (FTS5 BM25 + sqlite-vec, RRF) with confidence-driven routing.
 - Safety: mandatory risk, policy engine, exact-command approval, untrusted-output fencing, audit log,
   bounded subprocess execution with tree kill.

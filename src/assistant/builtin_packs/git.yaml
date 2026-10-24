@@ -32,10 +32,15 @@ tools:
   examples:
   - git log
   - show commit logs
+  - show recent commits
+  - what were the last commits
   keywords:
   - git
   - repository
   - commit
+  - commits
+  - history
+  - recent commits
   category: source-control
 - name: git_diff
   description: Show changes between commits, commit and working tree, etc.

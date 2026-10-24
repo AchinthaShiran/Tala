@@ -1,0 +1,110 @@
+pack: java
+version: 1.0.0
+description: Java, Maven and Gradle.
+tools:
+- name: java_version
+  description: Show the installed Java runtime version.
+  risk: read_only
+  category: java
+  keywords: [java, jre, jdk, version]
+  examples: [what java version do I have, java version]
+  run:
+    any:
+      exe: java
+      args: [-version]
+- name: javac_version
+  description: Show the installed Java compiler (javac, JDK) version.
+  risk: read_only
+  category: java
+  keywords: [javac, jdk, compiler, java]
+  examples: [javac version, is the JDK installed]
+  run:
+    any:
+      exe: javac
+      args: [-version]
+- name: maven_version
+  description: Show the Maven version and the Java it uses.
+  risk: read_only
+  category: java
+  keywords: [maven, mvn, version, java build]
+  examples: [maven version, mvn -v]
+  run:
+    any:
+      exe: mvn
+      args: [-v]
+- name: maven_test
+  description: Run the tests of a Maven project in the current folder.
+  risk: mutating
+  category: java
+  keywords: [maven, mvn, test, run tests, java tests, junit]
+  examples: [run the maven tests, mvn test]
+  timeout: 1200
+  run:
+    any:
+      exe: mvn
+      args: [-B, test]
+- name: maven_package
+  description: Build and package a Maven project (creates the jar) in the current folder.
+  risk: mutating
+  category: java
+  keywords: [maven, mvn, package, build, jar, compile]
+  examples: [build the maven project, mvn package]
+  timeout: 1200
+  run:
+    any:
+      exe: mvn
+      args: [-B, package]
+- name: maven_clean
+  description: Delete the build output (target folder) of a Maven project.
+  risk: mutating
+  category: java
+  keywords: [maven, mvn, clean, target]
+  examples: [maven clean, clean the maven build]
+  timeout: 300
+  run:
+    any:
+      exe: mvn
+      args: [-B, clean]
+- name: gradle_version
+  description: Show the Gradle version.
+  risk: read_only
+  category: java
+  keywords: [gradle, version, java build]
+  examples: [gradle version, is gradle installed]
+  run:
+    any:
+      exe: gradle
+      args: [--version, --console=plain]
+- name: gradle_build
+  description: Build a Gradle project in the current folder.
+  risk: mutating
+  category: java
+  keywords: [gradle, build, compile, jar, java]
+  examples: [build the gradle project, gradle build]
+  timeout: 1200
+  run:
+    any:
+      exe: gradle
+      args: [build, --console=plain]
+- name: gradle_test
+  description: Run the tests of a Gradle project in the current folder.
+  risk: mutating
+  category: java
+  keywords: [gradle, test, run tests, java tests]
+  examples: [run the gradle tests, gradle test]
+  timeout: 1200
+  run:
+    any:
+      exe: gradle
+      args: [test, --console=plain]
+- name: gradle_clean
+  description: Delete the build output of a Gradle project.
+  risk: mutating
+  category: java
+  keywords: [gradle, clean, build folder]
+  examples: [gradle clean, clean the gradle build]
+  timeout: 300
+  run:
+    any:
+      exe: gradle
+      args: [clean, --console=plain]

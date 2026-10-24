@@ -26,6 +26,8 @@ def sample(param: ParamSpec) -> object:
     if param.type == "boolean":
         return True
     pattern = param.pattern or ""
+    if "https?" in pattern:
+        return "https://example.com/a"
     if "apk" in pattern:
         return "app.apk"
     if "0-9a-fA-F]{8}" in pattern:
@@ -135,5 +137,43 @@ def test_known_risk_labels_for_android_and_reboot_tools():
         "adb_uninstall_app": RiskLevel.DESTRUCTIVE,
         "adb_battery": RiskLevel.READ_ONLY,
         "adb_list_reversed": RiskLevel.READ_ONLY,
+    }
+    assert {name: REPORT.tools[name].risk for name in expected} == expected
+
+
+def test_powershell_tools_cannot_be_given_quote_characters():
+    """Values are embedded in single-quoted PowerShell strings, so quotes must never get through."""
+    import re
+
+    for spec in TOOLS:
+        windows = spec.run.get(Platform.WINDOWS)
+        if windows is None or windows.exe != "powershell":
+            continue
+        script = " ".join(str(a) for a in windows.args)
+        for name, param in spec.parameters.items():
+            if param.type == "string" and "{" + name + "}" in script:
+                assert param.pattern or param.enum, (spec.name, name)
+                if param.pattern:
+                    for bad in ("x'; Remove-Item *; '", 'x" y', "x`y", "x\ny"):
+                        assert not re.search(param.pattern, bad), (spec.name, name, bad)
+
+
+def test_known_risk_labels_for_new_packs():
+    expected = {
+        "read_file": RiskLevel.READ_ONLY,
+        "file_properties": RiskLevel.READ_ONLY,
+        "copy_file": RiskLevel.MUTATING,
+        "move_file": RiskLevel.MUTATING,
+        "delete_file": RiskLevel.DESTRUCTIVE,
+        "pip_install": RiskLevel.MUTATING,
+        "pip_uninstall": RiskLevel.DESTRUCTIVE,
+        "run_python_script": RiskLevel.DESTRUCTIVE,
+        "ssh_run_command": RiskLevel.DESTRUCTIVE,
+        "firewall_block_port": RiskLevel.DESTRUCTIVE,
+        "service_stop": RiskLevel.DESTRUCTIVE,
+        "git_reset_hard": RiskLevel.DESTRUCTIVE,
+        "git_pull": RiskLevel.MUTATING,
+        "download_file": RiskLevel.MUTATING,
+        "http_get": RiskLevel.READ_ONLY,
     }
     assert {name: REPORT.tools[name].risk for name in expected} == expected

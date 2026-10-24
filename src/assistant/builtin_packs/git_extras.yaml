@@ -1,0 +1,118 @@
+pack: git-extras
+version: 1.0.0
+description: 'More git: branches, remotes, fetch, pull, checkout, stash and reset.'
+tools:
+- name: git_branches
+  description: List the git branches of the repository in the current folder and which one is checked
+    out.
+  risk: read_only
+  category: git
+  keywords: [git, branch, branches, current branch, checked out]
+  examples: [which git branch am I on, list the branches, show all branches]
+  run:
+    any:
+      exe: git
+      args: [branch, -a, -vv]
+- name: git_remotes
+  description: Show the remote repositories (URLs) configured for the git repository.
+  risk: read_only
+  category: git
+  keywords: [git, remote, origin, url, remotes]
+  examples: [what is the git remote url, show the remotes]
+  run:
+    any:
+      exe: git
+      args: [remote, -v]
+- name: git_show
+  description: 'Show a commit: author, message and the files it changed.'
+  risk: read_only
+  category: git
+  keywords: [git, show, commit, changes, last commit]
+  examples: [show the last commit, what did commit abc123 change]
+  parameters:
+    rev: {type: string, description: 'Commit, tag or branch', default: HEAD, pattern: '^[A-Za-z0-9._/~^@-]+$',
+      max_length: 100}
+  run:
+    any:
+      exe: git
+      args: [show, --stat, '{rev}']
+- name: git_stash_list
+  description: List the stashed changes of the git repository.
+  risk: read_only
+  category: git
+  keywords: [git, stash, stashed, saved changes]
+  examples: [what is in the git stash, list my stashes]
+  run:
+    any:
+      exe: git
+      args: [stash, list]
+- name: git_fetch
+  description: Download the latest changes from the remote without changing your files.
+  risk: mutating
+  category: git
+  keywords: [git, fetch, remote, update refs]
+  examples: [git fetch, fetch the latest from origin]
+  timeout: 120
+  run:
+    any:
+      exe: git
+      args: [fetch, --prune]
+- name: git_pull
+  description: Update the current branch from its remote (fast-forward only).
+  risk: mutating
+  category: git
+  keywords: [git, pull, update, latest, sync]
+  examples: [git pull, get the latest changes]
+  timeout: 120
+  run:
+    any:
+      exe: git
+      args: [pull, --ff-only]
+- name: git_checkout
+  description: Switch to an existing git branch.
+  risk: mutating
+  category: git
+  keywords: [git, checkout, switch, branch]
+  examples: [switch to the develop branch, git checkout main]
+  parameters:
+    branch: &id001 {type: string, description: Branch name, pattern: '^[A-Za-z0-9._/-]+$', max_length: 100}
+  run:
+    any:
+      exe: git
+      args: [switch, '{branch}']
+- name: git_create_branch
+  description: Create a new git branch and switch to it.
+  risk: mutating
+  category: git
+  keywords: [git, new branch, create branch, switch -c]
+  examples: [create a branch called feature-login, make a new git branch fix-bug]
+  parameters:
+    branch: *id001
+  run:
+    any:
+      exe: git
+      args: [switch, -c, '{branch}']
+- name: git_stash
+  description: Stash (shelve) the uncommitted changes so the working folder is clean.
+  risk: mutating
+  category: git
+  keywords: [git, stash, shelve, save changes]
+  examples: [stash my changes, git stash]
+  run:
+    any:
+      exe: git
+      args: [stash, push]
+- name: git_reset_hard
+  description: Discard all uncommitted changes and reset the working folder to a commit.
+  risk: destructive
+  category: git
+  keywords: [git, reset, hard, discard changes, undo, revert local]
+  examples: [discard all my local changes, git reset --hard]
+  confirm_message: This permanently throws away uncommitted work.
+  parameters:
+    rev: {type: string, description: 'Commit, tag or branch to reset to', default: HEAD, pattern: '^[A-Za-z0-9._/~^@-]+$',
+      max_length: 100}
+  run:
+    any:
+      exe: git
+      args: [reset, --hard, '{rev}']

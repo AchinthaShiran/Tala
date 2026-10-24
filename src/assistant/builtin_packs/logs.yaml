@@ -1,0 +1,49 @@
+pack: logs
+version: 1.0.0
+description: Recent entries of the system log (Windows event log, journald, macOS unified log).
+tools:
+- name: system_log_recent
+  description: Show recent system log entries from the last few minutes.
+  risk: read_only
+  category: logs
+  keywords: [system log, logs, journal, journalctl, event log, recent events, syslog, what happened]
+  examples: [show the system log from the last 30 minutes, what happened on this machine in the last hour]
+  timeout: 90
+  parameters:
+    minutes: &id001 {type: integer, description: How many minutes back to look, default: 10, minimum: 1,
+      maximum: 1440}
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, '$ev = Get-WinEvent -FilterHashtable @{LogName=''System'';
+          StartTime=(Get-Date).AddMinutes(-{minutes})} -MaxEvents 40 -ErrorAction SilentlyContinue; if
+          ($ev) { $ev | Select-Object TimeCreated,LevelDisplayName,ProviderName,Message | Format-List
+          } else { ''No matching events in that period.'' }; exit 0']
+    linux:
+      exe: journalctl
+      args: [--no-pager, -n, '100', --since, '{minutes} minutes ago']
+    macos:
+      exe: log
+      args: [show, --last, '{minutes}m', --style, compact]
+- name: system_errors_recent
+  description: Show only the errors from the system log in the last few minutes.
+  risk: read_only
+  category: logs
+  keywords: [errors, system errors, critical, failures, error log, journal errors, what went wrong]
+  examples: [show recent system errors, were there any errors in the last hour]
+  timeout: 90
+  parameters:
+    minutes: *id001
+  run:
+    windows:
+      exe: powershell
+      args: [-NoProfile, -NonInteractive, -Command, '$ev = Get-WinEvent -FilterHashtable @{LogName=''System'';
+          Level=1,2; StartTime=(Get-Date).AddMinutes(-{minutes})} -MaxEvents 40 -ErrorAction SilentlyContinue;
+          if ($ev) { $ev | Select-Object TimeCreated,LevelDisplayName,ProviderName,Message | Format-List
+          } else { ''No matching events in that period.'' }; exit 0']
+    linux:
+      exe: journalctl
+      args: [--no-pager, -p, err, -n, '100', --since, '{minutes} minutes ago']
+    macos:
+      exe: log
+      args: [show, --last, '{minutes}m', --style, compact, --predicate, messageType == error]
