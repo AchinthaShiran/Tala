@@ -15,6 +15,9 @@ Complete rebuild of the v2 prototype. See [docs/from-v2.md](docs/from-v2.md).
   docker, adb, fastboot, Python/pip/uv, Java/Maven/Gradle, Node/Yarn/pnpm, .NET/Go/Rust/Ruby, curl, SSH,
   firewall, services, apt/Homebrew/Chocolatey, system logs, file reading, searching, hashing, copying
   and archiving, and winget, powercfg, schtasks and wevtutil on Windows.
+- Summary-first output for content-heavy tools (web pages, files, logs, diffs): the reply ends with an offer
+  of the original output, which a "yes" shows verbatim (pack key `offer_original`, setting
+  `runtime.offer_original_output`).
 - Hybrid tool retrieval (FTS5 BM25 + sqlite-vec, RRF) with confidence-driven routing.
 - Safety: mandatory risk, policy engine, exact-command approval, untrusted-output fencing, audit log,
   bounded subprocess execution with tree kill.

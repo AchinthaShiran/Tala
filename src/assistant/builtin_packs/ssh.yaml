@@ -32,3 +32,4 @@ tools:
     any:
       exe: ssh
       args: [-o, BatchMode=yes, -o, ConnectTimeout=8, '{target}', '{command}']
+  offer_original: true

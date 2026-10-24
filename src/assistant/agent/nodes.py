@@ -34,6 +34,7 @@ from assistant.domain import (
     ExecutionResult,
     RiskLevel,
 )
+from assistant.domain.original import OFFER_TEXT
 from assistant.memory import FactStore, approx_tokens, compact_old_tool_outputs, fit_to_budget
 from assistant.packs import ToolRegistry
 from assistant.retrieval import Confidence, ToolIndex, content_tokens
@@ -121,6 +122,7 @@ class AgentNodes:
             "denied": {},
             "candidates": [],
             "fast_tool": "",
+            "offered": {},
         }
         query = _routing_query(state["messages"])
         reset["multi_step"] = self._wants_follow_ups(query)
@@ -170,8 +172,33 @@ class AgentNodes:
         direct = self._direct_answer(state["messages"])
         if direct is not None:
             return {"messages": [AIMessage(content=direct)]}
-        reply = self._d.models["summarizer"].invoke(self._prompt("summarizer", state))
-        return {"messages": [_plain(reply)]}
+        reply = _plain(self._d.models["summarizer"].invoke(self._prompt("summarizer", state)))
+        offered = self._originals(state["messages"])
+        if offered and self._d.settings.runtime.offer_original_output:
+            # The question is fixed text, not model output, so it can never be forgotten or reworded.
+            reply = AIMessage(content=_text(reply).rstrip() + "\n\n" + OFFER_TEXT)
+            return {"messages": [reply], "offered": offered}
+        return {"messages": [reply]}
+
+    def _originals(self, messages: Sequence[BaseMessage]) -> dict[str, str]:
+        """Verbatim output of this turn's content-heavy tools (``offer_original``), if any."""
+        last_human = max(
+            (i for i, m in enumerate(messages) if isinstance(m, HumanMessage)), default=-1
+        )
+        found = [
+            (m.name or "", str(m.artifact["original"]))
+            for m in messages[last_human + 1 :]
+            if isinstance(m, ToolMessage)
+            and isinstance(m.artifact, dict)
+            and m.artifact.get("original")
+        ]
+        if not found:
+            return {}
+        if len(found) == 1:
+            return {"tool": found[0][0], "text": found[0][1]}
+        tools = ", ".join(name for name, _ in found)
+        text = "\n\n".join("--- " + name + " ---\n" + body for name, body in found)
+        return {"tool": tools, "text": text}
 
     def _wants_follow_ups(self, query: str) -> bool:
         """Whether another executor round may be needed after the first tool results.
@@ -201,6 +228,7 @@ class AgentNodes:
         if (
             spec is None
             or spec.risk is not RiskLevel.READ_ONLY
+            or spec.offer_original  # summarised first, raw text on request
             or result.artifact.get("status") != "ok"
             or not text.strip()
             or len(text) > limit
@@ -435,6 +463,8 @@ class AgentNodes:
         fenced = fence_tool_output(
             call["name"], call["id"], text, max_chars=self._d.settings.runtime.tool_output_chars
         )
+        spec = self._d.registry.available.get(call["name"])
+        keep_original = bool(spec and spec.offer_original and status == "ok" and text.strip())
         return ToolMessage(
             content=fenced,
             tool_call_id=call["id"],
@@ -446,6 +476,7 @@ class AgentNodes:
                 "duration_ms": ms,
                 "preview": text[:PREVIEW_CHARS],
                 "command": call["command"],
+                **({"original": text} if keep_original else {}),
             },
         )
 

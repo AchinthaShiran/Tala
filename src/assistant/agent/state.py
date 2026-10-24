@@ -31,4 +31,5 @@ class AgentState(TypedDict, total=False):
     steps: int  # tool rounds executed this turn
     repairs: int  # consecutive invalid-call repairs
     untrusted_seen: bool  # tool output entered the context this turn
+    offered: dict[str, str]  # {tool, text}: raw output the user was offered after a summary
     next: str  # routing hint written by nodes

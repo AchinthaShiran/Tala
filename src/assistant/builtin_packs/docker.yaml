@@ -54,6 +54,7 @@ tools:
 - name: docker_logs
   description: Fetch the recent stdout and stderr logs of a specific docker container.
   risk: read_only
+  offer_original: true
   parameters:
     container:
       type: string

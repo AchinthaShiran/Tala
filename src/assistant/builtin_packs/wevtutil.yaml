@@ -6,6 +6,7 @@ tools:
   description: Show the most recent events from the System or Application event log, newest first. Use
     for "why did my laptop crash/restart" or "any recent errors".
   risk: read_only
+  offer_original: true
   parameters:
     log_name:
       type: string

@@ -449,6 +449,7 @@ tools:
   description: 'Android device (adb): Show the most recent device log lines at or above a level (V, D,
     I, W, E, F). May contain app data.'
   risk: read_only
+  offer_original: true
   parameters:
     lines:
       type: integer

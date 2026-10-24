@@ -53,6 +53,7 @@ tools:
     any:
       exe: gh
       args: [pr, view, '{number}']
+  offer_original: true
 - name: gh_pr_checks
   description: Show the CI check results of a pull request.
   risk: read_only

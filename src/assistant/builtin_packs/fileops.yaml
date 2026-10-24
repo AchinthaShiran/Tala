@@ -21,6 +21,7 @@ tools:
     macos:
       exe: head
       args: [-n, '{lines}', '{path}']
+  offer_original: true
 - name: read_file_tail
   description: Show the last lines of a text file, for example the end of a log file.
   risk: read_only
@@ -40,6 +41,7 @@ tools:
     macos:
       exe: tail
       args: [-n, '{lines}', '{path}']
+  offer_original: true
 - name: file_properties
   description: 'Show the properties of a file or folder: size, type, created, modified and accessed dates,
     attributes or permissions.'
@@ -109,6 +111,7 @@ tools:
     macos:
       exe: grep
       args: [-rnIF, --, '{text}', '{directory}']
+  offer_original: true
 - name: file_hash
   description: Compute the checksum (SHA-256, SHA-1 or MD5 hash) of a file, to verify a download or compare
     files.
