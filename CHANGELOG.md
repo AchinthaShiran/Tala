@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.0.1
+
+### Added
+- About 100 more built-in tools (about 200 in total): file reading, searching, hashing, copying and
+  archiving; Python/pip/uv, Java/Maven/Gradle, Node/Yarn/pnpm, .NET, Go, Rust and Ruby; curl, port checks,
+  Wi-Fi and DNS; SSH; firewall; services; apt, Homebrew and Chocolatey; system logs; GitHub CLI; more git.
+- Summary-first output for content-heavy tools (web pages, files, logs, diffs): the reply ends with an offer
+  of the original output, which a "yes" shows verbatim (pack key `offer_original`, setting
+  `runtime.offer_original_output`).
+
+### Fixed
+- `install.ps1` no longer rejects the `py` launcher installed by the Python install manager, and no longer
+  hangs on Python launchers that wait for input. Its error now lists the interpreters it checked.
+- Retrieval evaluation skips cases whose tools do not exist on the current OS, so the quality gate is
+  stable on Linux and macOS.
+- Tests no longer fail on Python builds without SQLite extension loading, or when long paths wrap console output.
+
 ## 3.0.0
 
 Complete rebuild of the v2 prototype. See [docs/from-v2.md](docs/from-v2.md).
