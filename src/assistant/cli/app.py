@@ -84,6 +84,7 @@ def chat(
         runtime = create_runtime(config)
     except AssistantError as exc:
         raise _fail(str(exc)) from exc
+    runtime.start_warmup()  # loads models while the user is typing the first message
     renderer = ConsoleRenderer(console, show_tool_output=show_output)
     assistant = runtime.assistant
     console.print(
@@ -125,6 +126,7 @@ def ask(
     except AssistantError as exc:
         raise _fail(str(exc)) from exc
     try:
+        runtime.start_warmup()  # overlaps model loading with routing
         renderer = ConsoleRenderer(console, show_tool_output=show_output)
         _turn(renderer, runtime.assistant.send(session, question), runtime.assistant, session)
     finally:

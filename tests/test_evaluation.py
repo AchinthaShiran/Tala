@@ -31,7 +31,9 @@ def test_golden_cases_load_and_reference_real_tools():
 def test_retrieval_quality_gate_keyword_mode():
     """Regression guard for tool selection quality (BM25-only is the worst case)."""
     report = evaluate_retrieval(TOOLS, load_cases(), RetrievalSettings())
-    assert report.metrics["recall@6"] >= 0.9, [str(r.case.query) for r in report.failures]
+    assert report.metrics[f"recall@{RetrievalSettings().top_k}"] >= 0.9, [
+        str(r.case.query) for r in report.failures
+    ]
     assert report.metrics["top1"] >= 0.8
     assert report.metrics["false_strong_rate"] <= 0.2
 
@@ -41,9 +43,9 @@ def test_agent_eval_scores_tool_choice_args_and_chat(make_harness):
         {
             "executor": [
                 ai("", tool_call("ping_host", {"host": "google.com"})),
-                ai("DONE"),  # case 1: correct
+                # case 1: correct
                 ai("", tool_call("disk_free")),
-                ai("DONE"),  # case 2: wrong tool
+                # case 2: wrong tool
             ],
             "chat": ["hi!"],  # case 3 is conversation: executor is never used
             "summarizer": ["done", "done"],

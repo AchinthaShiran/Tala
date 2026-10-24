@@ -33,7 +33,7 @@ agents:                         # router, chat, executor, summarizer (all requir
     prompt: null                # replace the built-in system prompt
 
 retrieval:
-  top_k: 6                      # tools offered to the executor
+  top_k: 4                      # tools offered to the executor (fewer = faster prompt)
   min_similarity: 0.55          # cosine floor for a vector candidate
   strong_similarity: 0.70       # cosine at which a vector hit is a confident match alone
   corroborated_similarity: 0.60 # cosine at which ONE keyword match plus similarity counts as confident
@@ -49,6 +49,10 @@ safety:
 
 runtime:
   max_steps: 3                  # tool rounds per request
+  followups: auto               # auto | always | never: extra executor rounds after the first results
+  direct_output_chars: 0        # >0: show one small successful read-only result verbatim (no summary)
+  fast_path: true               # skip the executor model for decisive, argument-free read-only tools
+  fast_path_margin: 0.05        # similarity lead the top tool needs over the runner-up
   max_repairs: 2                # attempts to fix an invalid tool call
   history_budget_ratio: 0.6     # share of num_ctx given to conversation history
   tool_output_chars: 6000       # per-output cap before it reaches the model

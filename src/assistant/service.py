@@ -141,7 +141,7 @@ class Assistant:
     ) -> Generator[Event, None, str]:
         """Translate one node's state update into events; returns the latest final text."""
         messages: list[BaseMessage] = update.get("messages", [])
-        if node == "executor":
+        if node in ("executor", "fast"):
             for call in update.get("pending", []):
                 yield ToolProposedEvent(
                     call_id=call["id"],

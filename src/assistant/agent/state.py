@@ -26,6 +26,8 @@ class AgentState(TypedDict, total=False):
     pending: list[PendingCall]
     approved: list[str]  # call ids cleared to run
     denied: dict[str, str]  # call id -> reason
+    fast_tool: str  # tool chosen by retrieval alone (fast path), else empty
+    multi_step: bool  # request may need more than one executor round
     steps: int  # tool rounds executed this turn
     repairs: int  # consecutive invalid-call repairs
     untrusted_seen: bool  # tool output entered the context this turn

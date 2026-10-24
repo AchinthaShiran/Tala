@@ -7,6 +7,7 @@ from assistant.llm.factory import (
     register_provider,
 )
 from assistant.llm.health import HealthCheck, check_backend
+from assistant.llm.warmup import warm_up
 
 __all__ = [
     "HealthCheck",
@@ -15,4 +16,5 @@ __all__ = [
     "build_embeddings",
     "check_backend",
     "register_provider",
+    "warm_up",
 ]

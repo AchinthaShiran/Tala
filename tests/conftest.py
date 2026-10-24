@@ -8,7 +8,7 @@ import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 
 from assistant.bootstrap import Runtime, build_runtime
-from assistant.config import AppPaths, Settings
+from assistant.config import AppPaths, RuntimeSettings, Settings
 from assistant.domain import Platform
 from assistant.safety import AuditEntry
 from tests.support import FakeRunner, ScriptedChatModel
@@ -54,7 +54,8 @@ def make_harness(paths: AppPaths, tmp_path: Path) -> Callable[..., Harness]:
         settings: Settings | None = None,
         runner: FakeRunner | None = None,
     ) -> Harness:
-        settings = settings or Settings(embeddings=None)
+        # Executor-centric tests run with the fast path off; test_fast_path.py turns it on.
+        settings = settings or Settings(embeddings=None, runtime=RuntimeSettings(fast_path=False))
         scripts = scripts or {}
         models = {
             name: ScriptedChatModel(script=list(scripts.get(name, [])))

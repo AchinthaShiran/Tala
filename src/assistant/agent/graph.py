@@ -30,12 +30,16 @@ def build_graph(
     graph.add_node("route", nodes.route)
     graph.add_node("chat", nodes.chat)
     graph.add_node("executor", nodes.execute_plan)
+    graph.add_node("fast", nodes.fast_path)
     graph.add_node("authorize", nodes.authorize)
     graph.add_node("run_tools", nodes.run_tools)
     graph.add_node("summarizer", nodes.summarize)
 
     graph.add_edge(START, "route")
-    graph.add_conditional_edges("route", _next, {"executor": "executor", "chat": "chat"})
+    graph.add_conditional_edges(
+        "route", _next, {"executor": "executor", "chat": "chat", "fast": "fast"}
+    )
+    graph.add_conditional_edges("fast", _next, {"authorize": "authorize", "executor": "executor"})
     graph.add_conditional_edges(
         "executor",
         _next,

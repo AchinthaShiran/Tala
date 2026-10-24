@@ -14,6 +14,7 @@ that these those there here what whats which who whom whose when where why how c
 should will shall may might must please hi hello hey thanks thank ok okay yes no not just so
 some any all more most very really also then than too up down out off again still now
 show give tell display see let make get want need like use using
+lot great cool nice good awesome perfect wow sure fine cheers bye goodbye morning evening night
 """
 STOPWORDS = frozenset(_STOPWORD_TEXT.split())
 

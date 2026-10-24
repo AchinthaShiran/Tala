@@ -93,6 +93,7 @@ agents:
   executor: {model: main, temperature: 0.1}
 runtime:
   max_steps: 3                                    # tool rounds per request
+  direct_output_chars: 600                        # fastest: show small results without a summary
 safety:
   tool_overrides: {git_status: auto, docker_ps: ask}
 packs:
@@ -100,7 +101,8 @@ packs:
   disabled_tools: [kill_process]
 ```
 
-Full reference: [docs/configuration.md](docs/configuration.md).
+Full reference: [docs/configuration.md](docs/configuration.md). For response speed (time to first output,
+fast path, warm-up) see [docs/performance.md](docs/performance.md).
 
 ## Project layout
 

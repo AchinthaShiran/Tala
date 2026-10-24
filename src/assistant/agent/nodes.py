@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -23,6 +24,7 @@ from langchain_core.tools import BaseTool
 from langgraph.types import interrupt
 
 from assistant.agent import prompts
+from assistant.agent.fastpath import pick_fast_tool
 from assistant.agent.state import AgentState, PendingCall
 from assistant.config import Settings
 from assistant.domain import (
@@ -34,7 +36,7 @@ from assistant.domain import (
 )
 from assistant.memory import FactStore, approx_tokens, compact_old_tool_outputs, fit_to_budget
 from assistant.packs import ToolRegistry
-from assistant.retrieval import Confidence, ToolIndex
+from assistant.retrieval import Confidence, ToolIndex, content_tokens
 from assistant.safety import (
     AuditEntry,
     AuditLog,
@@ -46,6 +48,7 @@ from assistant.tools import ToolExecutor
 
 log = logging.getLogger(__name__)
 
+_SEQUENCE_WORDS = re.compile(r"\b(then|afterwards?|after that|next|followed by|and also)\b", re.I)
 MAX_CALLS_PER_MESSAGE = 5
 MAX_PARALLEL_READS = 4
 PREVIEW_CHARS = 2000
@@ -117,8 +120,10 @@ class AgentNodes:
             "approved": [],
             "denied": {},
             "candidates": [],
+            "fast_tool": "",
         }
         query = _routing_query(state["messages"])
+        reset["multi_step"] = self._wants_follow_ups(query)
         available = set(self._d.registry.available)
         if not available or not query:
             return {**reset, "next": "chat"}
@@ -126,6 +131,19 @@ class AgentNodes:
         result = self._d.index.search(query, allowed=available)
         reset["candidates"] = result.names
         if result.confidence is Confidence.STRONG:
+            runtime = self._d.settings.runtime
+            fast = (
+                pick_fast_tool(
+                    result,
+                    self._d.registry,
+                    self._d.settings.retrieval,
+                    margin=runtime.fast_path_margin,
+                )
+                if runtime.fast_path and not reset["multi_step"]
+                else None
+            )
+            if fast:
+                return {**reset, "fast_tool": fast, "next": "fast"}
             return {**reset, "next": "executor"}
         if result.confidence is Confidence.NONE:
             return {**reset, "next": "chat"}
@@ -149,10 +167,69 @@ class AgentNodes:
         return {"messages": [_plain(reply)]}
 
     def summarize(self, state: AgentState) -> dict[str, Any]:
+        direct = self._direct_answer(state["messages"])
+        if direct is not None:
+            return {"messages": [AIMessage(content=direct)]}
         reply = self._d.models["summarizer"].invoke(self._prompt("summarizer", state))
         return {"messages": [_plain(reply)]}
 
+    def _wants_follow_ups(self, query: str) -> bool:
+        """Whether another executor round may be needed after the first tool results.
+
+        Each extra round costs a full model call before the answer starts, so single-step
+        requests (the vast majority) skip it unless configured otherwise.
+        """
+        mode = self._d.settings.runtime.followups
+        if mode == "always":
+            return True
+        return mode == "auto" and _SEQUENCE_WORDS.search(query) is not None
+
+    def _direct_answer(self, messages: Sequence[BaseMessage]) -> str | None:
+        """Raw output of a single successful read-only call, when small enough (skips the model)."""
+        limit = self._d.settings.runtime.direct_output_chars
+        if limit <= 0:
+            return None
+        last_human = max(
+            (i for i, m in enumerate(messages) if isinstance(m, HumanMessage)), default=-1
+        )
+        results = [m for m in messages[last_human + 1 :] if isinstance(m, ToolMessage)]
+        if len(results) != 1 or not isinstance(results[0].artifact, dict):
+            return None
+        result = results[0]
+        spec = self._d.registry.available.get(result.name or "")
+        text = str(result.artifact.get("preview", ""))
+        if (
+            spec is None
+            or spec.risk is not RiskLevel.READ_ONLY
+            or result.artifact.get("status") != "ok"
+            or not text.strip()
+            or len(text) > limit
+        ):
+            return None
+        return text.strip()
+
     # -- executor ----------------------------------------------------------------------------
+
+    def fast_path(self, state: AgentState) -> dict[str, Any]:
+        """Run the tool retrieval picked, without asking the executor model for a call."""
+        name = state.get("fast_tool", "")
+        try:
+            prepared = self._d.executor.prepare(name, {})
+        except AssistantError:
+            return {"next": "executor"}  # fall back to the normal path
+        call_id = f"call_{uuid4().hex[:12]}"
+        ai = AIMessage(
+            content="", tool_calls=[{"name": name, "args": {}, "id": call_id, "type": "tool_call"}]
+        )
+        pending = PendingCall(
+            id=call_id,
+            name=name,
+            args=dict(prepared.arguments),
+            command=prepared.command,
+            risk=prepared.spec.risk.value,
+            mode=ApprovalMode.AUTO.value,
+        )
+        return {"messages": [ai], "pending": [pending], "repairs": 0, "next": "authorize"}
 
     def execute_plan(self, state: AgentState) -> dict[str, Any]:
         candidates = [n for n in state.get("candidates", []) if n in self._d.registry]
@@ -289,7 +366,11 @@ class AgentNodes:
                 messages.append(self._result_message(call, results[call["id"]], session))
 
         steps = state.get("steps", 0) + 1
-        stop = bool(denied) or steps >= self._d.settings.runtime.max_steps
+        stop = (
+            bool(denied)
+            or steps >= self._d.settings.runtime.max_steps
+            or not state.get("multi_step", False)
+        )
         return {
             "messages": messages,
             "steps": steps,
@@ -408,12 +489,13 @@ def _plain(message: BaseMessage) -> AIMessage:
 
 
 def _routing_query(messages: Sequence[BaseMessage]) -> str:
-    """Latest user text; very short follow-ups borrow the previous user message for context."""
+    """Latest user text. A short follow-up with real content words ("and the other adapter?")
+    borrows the previous user message for context; pure chit-chat ("thanks") never does."""
     humans = [_text(m) for m in messages if isinstance(m, HumanMessage)]
     if not humans:
         return ""
     latest = humans[-1]
-    if len(latest.split()) < 4 and len(humans) > 1:
+    if len(latest.split()) < 4 and len(humans) > 1 and content_tokens(latest):
         return f"{humans[-2]} {latest}"
     return latest
 

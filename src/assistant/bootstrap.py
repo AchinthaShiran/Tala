@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import platform as host
+import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,7 +22,7 @@ from assistant.config import (
     project_packs_dir,
 )
 from assistant.domain import Platform, current_platform
-from assistant.llm import build_chat_model, build_embeddings
+from assistant.llm import build_chat_model, build_embeddings, warm_up
 from assistant.memory import FactStore, open_checkpointer
 from assistant.packs import LoadReport, PackRoot, ToolRegistry, load_packs
 from assistant.retrieval import ToolIndex
@@ -41,6 +42,12 @@ class Runtime:
     pack_report: LoadReport
     index: ToolIndex
     facts: FactStore
+    warm: Callable[[], None] | None = None  # loads models; None when models are injected (tests)
+
+    def start_warmup(self) -> None:
+        """Load models in the background so the first request does not pay for it."""
+        if self.warm is not None:
+            threading.Thread(target=self.warm, name="model-warmup", daemon=True).start()
 
     def close(self) -> None:
         self.index.close()
@@ -130,4 +137,5 @@ def build_runtime(
     )
     saver = checkpointer or open_checkpointer(paths.checkpoints_db)
     assistant = Assistant(build_graph(deps, saver), saver)
-    return Runtime(assistant, settings, paths, registry, report, index, facts)
+    warm = None if chat_models else (lambda: warm_up(settings))
+    return Runtime(assistant, settings, paths, registry, report, index, facts, warm)

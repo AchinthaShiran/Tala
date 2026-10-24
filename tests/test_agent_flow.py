@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from langchain_core.messages import ToolMessage
 
-from assistant.config import SafetySettings, Settings
+from assistant.config import RuntimeSettings, SafetySettings, Settings
 from assistant.domain import (
     ApprovalMode,
     ApprovalRequestedEvent,
@@ -189,16 +189,12 @@ def test_executor_without_tool_call_falls_back_to_chat(make_harness):
 
 
 def test_max_steps_goes_straight_to_summary(make_harness):
-    settings = Settings(embeddings=None)
-    settings = settings.model_copy(
-        update={"runtime": settings.runtime.model_copy(update={"max_steps": 1})}
-    )
     h = make_harness(
         {
             "executor": [ai("", tool_call("disk_free"))],  # no second executor reply scripted
             "summarizer": ["done"],
         },
-        settings=settings,
+        settings=settings_with(max_steps=1, followups="always"),
     )
     events = run(h, "how much disk space is free")
     assert isinstance(events[-1], FinalEvent) and events[-1].text == "done"
@@ -216,7 +212,7 @@ def test_multi_step_loop_runs_second_tool(make_harness):
             "summarizer": ["both done"],
         }
     )
-    events = run(h, "check disk space and memory usage")
+    events = run(h, "check disk space then memory usage")
     assert [c[0] for c in h.runner.calls] == ["/fake/df", "/fake/free"]
     assert sum(isinstance(e, ToolResultEvent) for e in events) == 2
 
@@ -334,3 +330,79 @@ def test_prompts_tell_the_model_the_working_directory(make_harness):
     run(h, "hello there")
     system = h.models["chat"].prompts[0][0].content
     assert os.getcwd() in system
+
+
+def settings_with(**runtime):
+    base = Settings(embeddings=None, runtime=RuntimeSettings(fast_path=False))
+    return base.model_copy(update={"runtime": base.runtime.model_copy(update=runtime)})
+
+
+def test_single_step_requests_skip_the_extra_executor_call(make_harness):
+    """Time to first token: no 'are you done?' round trip after the first tool result."""
+    h = make_harness({"executor": [ai("", tool_call("disk_free"))], "summarizer": ["10G free."]})
+    events = run(h, "how much disk space is free")
+    assert h.models["executor"].calls == 1
+    assert isinstance(events[-1], FinalEvent) and events[-1].text == "10G free."
+
+
+def test_followups_never_ignores_sequence_words(make_harness):
+    h = make_harness(
+        {"executor": [ai("", tool_call("disk_free"))], "summarizer": ["ok"]},
+        settings=settings_with(followups="never"),
+    )
+    run(h, "check disk space then memory usage")
+    assert h.models["executor"].calls == 1 and len(h.runner.calls) == 1
+
+
+def test_followups_always_lets_the_model_continue(make_harness):
+    h = make_harness(
+        {
+            "executor": [
+                ai("", tool_call("disk_free")),
+                ai("", tool_call("memory_usage")),
+                ai("DONE"),
+            ],
+            "summarizer": ["ok"],
+        },
+        settings=settings_with(followups="always"),
+    )
+    run(h, "how much disk space is free")
+    assert [c[0] for c in h.runner.calls] == ["/fake/df", "/fake/free"]
+
+
+def test_direct_output_skips_the_summarizer_for_small_read_only_results(make_harness):
+    h = make_harness(
+        {"executor": [ai("", tool_call("disk_free"))]},  # no summarizer reply scripted
+        settings=settings_with(direct_output_chars=500),
+        runner=FakeRunner("C: 9.2G free"),
+    )
+    events = run(h, "how much disk space is free")
+    assert h.models["summarizer"].calls == 0
+    assert isinstance(events[-1], FinalEvent) and events[-1].text == "C: 9.2G free"
+
+
+def test_direct_output_not_used_for_large_failed_or_mutating_results(make_harness):
+    big = make_harness(
+        {"executor": [ai("", tool_call("disk_free"))], "summarizer": ["summary"]},
+        settings=settings_with(direct_output_chars=10),
+        runner=FakeRunner("x" * 50),
+    )
+    assert run(big, "how much disk space is free")[-1].text == "summary"
+
+    failed = make_harness(
+        {"executor": [ai("", tool_call("disk_free"))], "summarizer": ["it failed"]},
+        settings=settings_with(direct_output_chars=500),
+        runner=FakeRunner("boom", exit_code=2),
+    )
+    assert run(failed, "how much disk space is free")[-1].text == "it failed"
+
+    mutating = make_harness(
+        {
+            "executor": [ai("", tool_call("docker_stop", {"container": "web"}))],
+            "summarizer": ["stopped"],
+        },
+        settings=settings_with(direct_output_chars=500),
+    )
+    events = run(mutating, "stop the docker container web")
+    resumed = list(mutating.assistant.resume(SESSION, {events[-1].requests[0].call_id: True}))
+    assert resumed[-1].text == "stopped"

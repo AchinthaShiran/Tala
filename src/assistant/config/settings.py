@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
@@ -44,7 +44,7 @@ class AgentSettings(_Section):
 
 
 class RetrievalSettings(_Section):
-    top_k: int = Field(default=6, ge=1, le=30)
+    top_k: int = Field(default=4, ge=1, le=30)
     min_similarity: float = Field(default=0.55, ge=0, le=1)
     strong_similarity: float = Field(default=0.70, ge=0, le=1)
     corroborated_similarity: float = Field(default=0.60, ge=0, le=1)
@@ -76,6 +76,17 @@ class SafetySettings(_Section):
 
 class RuntimeSettings(_Section):
     max_steps: int = Field(default=3, ge=1, le=10)
+    # Extra executor rounds after the first tool results. Each costs a full model call before the
+    # answer starts: "auto" only when the request sounds sequential ("... then ..."), "never"
+    # always answers right after the first round, "always" lets the model decide every time.
+    followups: Literal["auto", "always", "never"] = "auto"
+    # Show a single small, successful read-only result verbatim instead of asking the model to
+    # summarise it (fastest first output). 0 disables.
+    direct_output_chars: int = Field(default=0, ge=0)
+    # Skip the executor model when retrieval is decisive and the tool is read-only with no
+    # arguments (e.g. disk_free). Saves a whole model call before the tool runs.
+    fast_path: bool = True
+    fast_path_margin: float = Field(default=0.05, ge=0, le=1)
     max_repairs: int = Field(default=2, ge=0, le=5)
     history_budget_ratio: float = Field(default=0.6, gt=0.1, le=0.95)
     tool_output_chars: int = Field(default=6000, ge=500)

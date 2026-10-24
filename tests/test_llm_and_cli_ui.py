@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 from langchain_core.embeddings import Embeddings
@@ -263,3 +263,59 @@ def test_friendly_errors():
     missing = friendly_error(type("ResponseError", (Exception,), {})("model not found"))
     assert "not installed" in missing
     assert friendly_error(ValueError("odd")).startswith("Something went wrong: odd")
+
+
+# -- warm-up ---------------------------------------------------------------------------------
+
+
+class RecordingOllama:
+    calls: ClassVar[list[tuple[str, dict[str, Any]]]] = []
+
+    def __init__(self, host: str, timeout: float) -> None:
+        self.host = host
+
+    def embed(self, **kwargs: Any) -> None:
+        RecordingOllama.calls.append(("embed", kwargs))
+
+    def generate(self, **kwargs: Any) -> None:
+        RecordingOllama.calls.append(("generate", kwargs))
+
+
+def test_warm_up_loads_embeddings_and_each_distinct_model_once_with_matching_context(monkeypatch):
+    from assistant.llm import warm_up
+
+    RecordingOllama.calls = []
+    monkeypatch.setattr("assistant.llm.warmup.ollama.Client", RecordingOllama)
+    warm_up(Settings())
+    kinds = [(name, kw.get("model")) for name, kw in RecordingOllama.calls]
+    assert kinds == [
+        ("embed", "nomic-embed-text"),
+        ("generate", "gemma4:e2b"),
+    ]  # router not preloaded
+    generate = RecordingOllama.calls[1][1]
+    assert generate["options"] == {"num_ctx": 8192} and generate["prompt"] == ""
+
+
+def test_warm_up_never_raises(monkeypatch):
+    from assistant.llm import warm_up
+
+    class Broken(RecordingOllama):
+        def generate(self, **kwargs: Any) -> None:
+            raise ConnectionError("down")
+
+        def embed(self, **kwargs: Any) -> None:
+            raise ConnectionError("down")
+
+    monkeypatch.setattr("assistant.llm.warmup.ollama.Client", Broken)
+    warm_up(Settings())  # must not raise
+
+
+def test_runtime_warmup_runs_in_a_background_thread(make_harness):
+    import threading
+
+    h = make_harness({})
+    assert h.runtime.warm is None  # injected models: nothing to preload
+    done = threading.Event()
+    h.runtime.warm = done.set
+    h.runtime.start_warmup()
+    assert done.wait(timeout=5)
