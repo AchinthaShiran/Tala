@@ -17,6 +17,8 @@ function Find-Python {
     foreach ($candidate in @("py", "python3", "python")) {
         $found = Get-Command $candidate -ErrorAction SilentlyContinue
         if (-not $found) { continue }
+        # The Microsoft Store "python" aliases are stubs that can block or open the Store; skip them.
+        if ($found.Source -like "*\WindowsApps\*") { continue }
         $pyArgs = if ($candidate -eq "py") { @("-3") } else { @() }
         try {
             $text = (& $found.Source @pyArgs -c "import sys; print('.'.join(map(str, sys.version_info[:2])))" 2>$null)
@@ -29,7 +31,7 @@ function Find-Python {
 function Install-App {
     $source = Get-Setting "SOURCE"
     if (-not $source) { $source = $DefaultPackage }
-    Write-Host "Installing $AppName ..."
+    Write-Host "Installing $AppName ... (the first install downloads several packages and can take a few minutes)"
 
     if (Get-Command uv -ErrorAction SilentlyContinue) {
         Write-Host "Using uv."
@@ -40,14 +42,15 @@ function Install-App {
         pipx install --force $source
         pipx ensurepath 2>$null | Out-Null
     } else {
+        Write-Host "Looking for Python ..."
         $python = Find-Python
         if (-not $python) {
             throw "Python $MinPython or newer is required. Install it from https://www.python.org/downloads/ and run this again."
         }
         $exe = $python[0]
         $prefix = @($python | Select-Object -Skip 1)
-        Write-Host "Installing pipx ..."
-        & $exe @prefix -m pip install --user --quiet pipx
+        Write-Host "Installing pipx (a few seconds) ..."
+        & $exe @prefix -m pip install --user --disable-pip-version-check pipx
         if ($LASTEXITCODE -ne 0) { throw "Could not install pipx. Install pipx or uv, then run this again." }
         & $exe @prefix -m pipx ensurepath 2>$null | Out-Null
         & $exe @prefix -m pipx install --force $source
