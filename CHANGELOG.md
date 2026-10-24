@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.2
+
+### Fixed
+- The release workflow no longer fails when a GitHub release for the tag already exists: it attaches the
+  build files and installers to it instead of trying to create it again.
+
 ## 3.0.1
 
 ### Added
