@@ -1,13 +1,13 @@
 #!/bin/sh
 # One-line installer for macOS and Linux:
-#   curl -fsSL <URL-of-this-file> | sh
+#   curl -fsSL https://raw.githubusercontent.com/AchinthaShiran/Tala/main/install.sh | sh
 #
 # Installs the app in its own isolated environment (uv or pipx), then starts the setup wizard.
 # Rebranding: change the variables below (they mirror src/assistant/domain/branding.py).
 APP_NAME="Tala"
 COMMAND="tala"
 ENV_PREFIX="TALA"
-DEFAULT_PACKAGE="tala-assistant"
+DEFAULT_PACKAGE="tala-ai"
 MIN_PYTHON_MAJOR=3
 MIN_PYTHON_MINOR=11
 
