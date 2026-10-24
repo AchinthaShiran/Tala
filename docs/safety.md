@@ -19,8 +19,8 @@ not a prompt. Decision record: [ADR-003](../.10x/adrs/003-safety-model.md).
 | Memory exhaustion from huge output | Bounded capture (head + tail) in constant memory, again bounded before prompting | `tools.runner`, `safety.fencing` |
 | Interactive prompts hanging the agent | stdin closed | `tools.runner` |
 | Config weakening safety by accident | Settings reject `destructive: auto`; `mutating: auto` needs `allow_auto_mutating: true` | `config.settings` |
-| No record of what ran | Append-only JSONL audit of tool, argv, approver, status, exit code, duration | `safety.audit`, `deskaide audit` |
-| Malicious pack in a cloned repository | Project packs are **not loaded until the directory is trusted** (`deskaide packs trust`, stored outside the repo); `deskaide doctor` warns when ignoring them | `config.trust`, `bootstrap.pack_roots` |
+| No record of what ran | Append-only JSONL audit of tool, argv, approver, status, exit code, duration | `safety.audit`, `tala audit` |
+| Malicious pack in a cloned repository | Project packs are **not loaded until the directory is trusted** (`tala packs trust`, stored outside the repo); `tala doctor` warns when ignoring them | `config.trust`, `bootstrap.pack_roots` |
 | Pack mistakes | Loader reports per tool; strict validator; builtin packs are a CI gate | `packs`, `tests/test_builtin_packs.py` |
 
 ## Approval modes

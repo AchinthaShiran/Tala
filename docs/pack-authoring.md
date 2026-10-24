@@ -5,11 +5,11 @@ A pack is one YAML file. Drop it in a pack directory and the assistant can use i
 | Layer (later wins) | Location |
 | --- | --- |
 | builtin | shipped with the package |
-| user | `<config dir>/packs/` (see `deskaide doctor`) |
-| project | `./.deskaide/packs/` (ignored until you run `deskaide packs trust` in that directory) |
+| user | `<config dir>/packs/` (see `tala doctor`) |
+| project | `./.tala/packs/` (ignored until you run `tala packs trust` in that directory) |
 | extra | `packs.dirs` in `config.yaml` |
 
-Always run `deskaide packs validate` after editing. It uses the same rules the loader uses, and `--strict`
+Always run `tala packs validate` after editing. It uses the same rules the loader uses, and `--strict`
 also fails on warnings (good for CI).
 
 ## File format
@@ -53,7 +53,7 @@ tools:
 
 `run` maps a platform (`windows`, `linux`, `macos`, `any`) to `{exe, args}`. The exact platform wins,
 otherwise `any`. A tool with no variant for the current OS, or whose `exe` is not on `PATH`, is
-**unavailable**: it is never offered to the model and `deskaide packs list --all` says why.
+**unavailable**: it is never offered to the model and `tala packs list --all` says why.
 
 Give one *logical* tool the same name and schema on every OS; only the command differs. The model
 then sees a stable capability (`disk_free`) rather than OS-specific commands (`df`, `Get-PSDrive`).
@@ -112,7 +112,7 @@ destructive tools can never be made automatic.
 
 The index searches `name`, `description`, `keywords`, `category` and `examples`. The cheapest accuracy
 win is realistic `examples`: the phrases a person would actually type ("is my laptop charging").
-Use `deskaide eval retrieval -v` and add cases to the golden set when a request picks the wrong tool.
+Use `tala eval retrieval -v` and add cases to the golden set when a request picks the wrong tool.
 
 ## Cookbook
 

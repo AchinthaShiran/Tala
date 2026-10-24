@@ -11,6 +11,6 @@ dist/
 build/
 *.db
 *.db-*
-.deskaide/data/
+.tala/data/
 .import_linter_cache/
-.deskaide-home/
+.tala-home/

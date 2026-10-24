@@ -11,7 +11,7 @@ v2 packs were thin Windows wrappers: no risk tags, optional arguments crashed, u
 - `risk` is required (`read_only|mutating|destructive`); destructive requires `confirm_message`.
 - `parameters` are typed with constraints (`enum`, `pattern`, `minimum`, `maximum`, `max_length`, `default`, `optional`, `allow_dash`).
 - `args` items are strings with `{param}` placeholders or conditionals `{when: param, args: [...]}`; a value gates a flag only when present/truthy.
-- Layered roots: builtin < user config dir < project `.deskaide/packs`; later overrides earlier and the override is reported.
+- Layered roots: builtin < user config dir < project `.tala/packs`; later overrides earlier and the override is reported.
 - Validator rules: unknown/unused placeholders, unreferenced params, optional-without-default used unconditionally, duplicate names within a root, invalid constraints, missing risk, <1 example.
 - Availability: platform variant exists and `shutil.which(exe)` resolves, otherwise the tool is `unavailable` with a reason and is never offered.
 

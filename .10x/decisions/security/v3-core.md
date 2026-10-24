@@ -4,7 +4,7 @@ See docs/safety.md for the threat table. Review outcome:
 
 | Finding | Severity | Status |
 | --- | --- | --- |
-| Project-local packs auto-loaded from the cwd (malicious repo could declare `risk: read_only` for any command) | High | **Fixed**: untrusted until `deskaide packs trust`; trust stored outside the repo; doctor warns; tests |
+| Project-local packs auto-loaded from the cwd (malicious repo could declare `risk: read_only` for any command) | High | **Fixed**: untrusted until `tala packs trust`; trust stored outside the repo; doctor warns; tests |
 | v2 `adb shell` tools allowed remote-shell injection via path/package parameters | High | **Fixed** in migration: strict patterns + test proving `;` and `$()` are rejected |
 | Option injection through values starting with `-` | Medium | **Fixed**: leading-dash guard by default |
 | Unknown `output_encoding` could raise at runtime | Low | **Fixed**: validated at load |

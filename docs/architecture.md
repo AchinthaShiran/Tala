@@ -90,10 +90,10 @@ Key properties:
 
 | Failure | Behaviour |
 | --- | --- |
-| Ollama down | `ErrorEvent` with an actionable message; `deskaide doctor` explains |
+| Ollama down | `ErrorEvent` with an actionable message; `tala doctor` explains |
 | Embeddings down | Index logs once and uses keyword search; retried after a cool-down |
 | `sqlite-vec` unsupported | Keyword-only mode |
-| Tool executable missing | Tool is unavailable (never offered) with a reason in `deskaide packs list --all` |
+| Tool executable missing | Tool is unavailable (never offered) with a reason in `tala packs list --all` |
 | Model emits invalid args | Error fed back as a `ToolMessage`, up to `max_repairs`, then a clear failure message |
 | Model calls a tool it was not offered | Rejected, same repair loop |
 | Command hangs | Killed with its children after the tool's timeout; model sees a timeout observation |

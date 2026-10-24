@@ -1,4 +1,4 @@
-# DeskAide
+# Tala
 
 A local, OS-agnostic AI assistant for your PC. Chat in plain language; a local model (via
 [Ollama](https://ollama.com)) picks and runs **tools** defined in simple YAML files called **packs**.
@@ -38,30 +38,30 @@ ollama pull gemma4:e2b && ollama pull granite4.1:3b && ollama pull nomic-embed-t
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-deskaide doctor          # checks Ollama, models, packs, tool availability on this machine
-deskaide chat            # start talking
+tala doctor          # checks Ollama, models, packs, tool availability on this machine
+tala chat            # start talking
 ```
 
 Other commands:
 
 | Command | Purpose |
 | --- | --- |
-| `deskaide ask "..."` | One question, then exit |
-| `deskaide packs list [--all]` | Tools available here (and why others are not) |
-| `deskaide packs show NAME` | Full definition of a tool |
-| `deskaide packs validate [PATH...] [--strict]` | Lint packs (use in CI for your own packs) |
-| `deskaide packs trust [DIR] [--revoke]` | Allow packs from `<DIR>/.deskaide/packs` (untrusted by default) |
-| `deskaide facts add/list/remove` | Things the assistant should always remember ("my phone is 192.168.1.20") |
-| `deskaide audit` | Recent tool executions |
-| `deskaide eval retrieval [--embeddings]` / `deskaide eval agent` | Measure tool-selection quality on the golden set |
+| `tala ask "..."` | One question, then exit |
+| `tala packs list [--all]` | Tools available here (and why others are not) |
+| `tala packs show NAME` | Full definition of a tool |
+| `tala packs validate [PATH...] [--strict]` | Lint packs (use in CI for your own packs) |
+| `tala packs trust [DIR] [--revoke]` | Allow packs from `<DIR>/.tala/packs` (untrusted by default) |
+| `tala facts add/list/remove` | Things the assistant should always remember ("my phone is 192.168.1.20") |
+| `tala audit` | Recent tool executions |
+| `tala eval retrieval [--embeddings]` / `tala eval agent` | Measure tool-selection quality on the golden set |
 
-Inside `deskaide chat`: `/tools`, `/history`, `/reset`, `/exit`. Sessions are saved and resume automatically
-(`deskaide chat --session work`).
+Inside `tala chat`: `/tools`, `/history`, `/reset`, `/exit`. Sessions are saved and resume automatically
+(`tala chat --session work`).
 
 ## Add your own tool in two minutes
 
-Create `~/.config/deskaide/packs/mine.yaml` (Windows: `%LOCALAPPDATA%\deskaide\packs\`;
-run `deskaide doctor` to see the exact path), or `./.deskaide/packs/` for a per-project pack (project packs load only after `deskaide packs trust`,
+Create `~/.config/tala/packs/mine.yaml` (Windows: `%LOCALAPPDATA%\tala\packs\`;
+run `tala doctor` to see the exact path), or `./.tala/packs/` for a per-project pack (project packs load only after `tala packs trust`,
 because a pack defines what may run on your machine):
 
 ```yaml
@@ -76,14 +76,14 @@ tools:
 ```
 
 ```bash
-deskaide packs validate      # catches mistakes before the model ever sees the tool
-deskaide chat                # "which branches do I have?"
+tala packs validate      # catches mistakes before the model ever sees the tool
+tala chat                # "which branches do I have?"
 ```
 
 ## Configuration
 
-Optional `config.yaml` (location shown by `deskaide doctor`). Everything has a default; override only what
-you need. Environment variables use `DESKAIDE__SECTION__KEY=value`.
+Optional `config.yaml` (location shown by `tala doctor`). Everything has a default; override only what
+you need. Environment variables use `TALA__SECTION__KEY=value`.
 
 ```yaml
 models:
@@ -135,7 +135,7 @@ pytest                      # 251 tests, fully offline (93% coverage)
 ruff check . && ruff format --check .
 mypy                        # strict
 lint-imports                # layer contracts (also part of pytest)
-deskaide eval retrieval -v       # tool-selection regression check
+tala eval retrieval -v       # tool-selection regression check
 ```
 
 CI runs all of the above on Windows, Linux and macOS (`.github/workflows/ci.yml`).
@@ -145,7 +145,7 @@ CI runs all of the above on Windows, Linux and macOS (`.github/workflows/ci.yml`
 - Front end: CLI. The service API is front-end agnostic; an HTTP/WebSocket or tray adapter is the next step.
 - Long-running/interactive programs (GUI apps, `scrcpy` mirroring) are not supported as tools yet.
 - Commands are not OS-sandboxed; protection comes from approval policy, constraints and bounded execution.
-- Small models (2-4B) make mistakes. Measure with `deskaide eval agent` before trusting a model, and keep
+- Small models (2-4B) make mistakes. Measure with `tala eval agent` before trusting a model, and keep
   mutating tools on `ask`.
 
 See [CHANGELOG](CHANGELOG.md) and the decision records in [.10x/adrs](.10x/adrs).

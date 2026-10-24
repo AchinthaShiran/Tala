@@ -11,7 +11,7 @@ Source: `desktop_assistant_v2/docs/review-and-improvements.md`.
 | B5 | Tool without executable (`get_system_info`) | Structural invariant; replaced by `os_info` etc. | `test_builtin_packs` |
 | B6 | `.cmd` shims (`npm`, `winget`) not found | `shutil.which` resolution, full path executed | `tools.executor.prepare`, `packs.registry` |
 | B7 | Router sent almost everything to the executor | Stop-words, confidence tiers, name/term-coverage rules; chit-chat bypasses tools | `test_retrieval`, eval: false-strong 0% with embeddings |
-| B8 | `min_score` was a no-op | Thresholds on cosine similarity and lexical coverage, tuned by eval | `deskaide eval retrieval` |
+| B8 | `min_score` was a no-op | Thresholds on cosine similarity and lexical coverage, tuned by eval | `tala eval retrieval` |
 | B9 | Tool-call messages sent to Ollama in the wrong shape | LangChain `ChatOllama` handles the wire format natively | live smoke test, agent flow tests |
 | B10 | Executor could call tools it was not offered | Validation against the offered set | `test_tool_not_offered_is_rejected` |
 | B11 | All call ids were `call_0` | Unique ids guaranteed per message | `agent.nodes._with_unique_ids` |
@@ -30,7 +30,7 @@ Source: `desktop_assistant_v2/docs/review-and-improvements.md`.
 | 3.4 | Thin packs | Examples, keywords, constraints, timeouts, lint; 95 tools | `test_builtin_packs` |
 | 3.5 | Coarse safety | Policy, exact command, fencing, post-output tightening, audit | `test_safety`, `test_agent_flow` |
 | 3.8 | Hard-coded embedding dimension | Dimension/model change detected, index rebuilt | `test_retrieval::test_changed_embedding_model_or_dimension...` |
-| 5 | Minimal tests, no eval | 251 tests; golden set; retrieval and agent evals; architecture test; CI matrix | `tests/`, `deskaide eval` |
+| 5 | Minimal tests, no eval | 251 tests; golden set; retrieval and agent evals; architecture test; CI matrix | `tests/`, `tala eval` |
 
 New problems found and fixed while building v3: `adb shell` commands were open to **remote-shell injection**
 through unconstrained package/path parameters (now pattern-constrained and tested); v2 `enum` parameters

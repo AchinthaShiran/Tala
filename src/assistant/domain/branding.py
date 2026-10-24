@@ -9,11 +9,11 @@ folder names (``tests/test_branding.py`` enforces that).
 
 from __future__ import annotations
 
-APP_NAME = "DeskAide"  # display name shown in banners and help
-APP_SLUG = "deskaide"  # config/data folder name
-COMMAND = "deskaide"  # CLI command typed by the user
-ENV_PREFIX = "DESKAIDE"  # environment variables: DESKAIDE_HOME, DESKAIDE__SECTION__KEY
-PROJECT_DIR = ".deskaide"  # per-project folder (holds packs/)
+APP_NAME = "Tala"  # display name shown in banners and help
+APP_SLUG = "tala"  # config/data folder name
+COMMAND = "tala"  # CLI command typed by the user
+ENV_PREFIX = "TALA"  # environment variables: TALA_HOME, TALA__SECTION__KEY
+PROJECT_DIR = ".tala"  # per-project folder (holds packs/)
 TAGLINE = "Local PC assistant: chat in natural language, extend it with YAML packs."
 
 HOME_ENV = f"{ENV_PREFIX}_HOME"  # relocates config and data

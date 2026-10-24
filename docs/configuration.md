@@ -1,11 +1,11 @@
 # Configuration reference
 
 Layers, lowest to highest priority: built-in defaults < `config.yaml` < environment variables <
-programmatic overrides. Unknown keys are errors (typos are caught). `deskaide doctor` prints the config path.
+programmatic overrides. Unknown keys are errors (typos are caught). `tala doctor` prints the config path.
 
-Environment variables: `DESKAIDE__<SECTION>__<KEY>=<yaml value>`, for example
-`DESKAIDE__MODELS__MAIN__NAME=gemma4:e4b`, `DESKAIDE__RUNTIME__MAX_STEPS=5`.
-`DESKAIDE_HOME=/some/dir` relocates config and data (useful for portable installs and tests).
+Environment variables: `TALA__<SECTION>__<KEY>=<yaml value>`, for example
+`TALA__MODELS__MAIN__NAME=gemma4:e4b`, `TALA__RUNTIME__MAX_STEPS=5`.
+`TALA_HOME=/some/dir` relocates config and data (useful for portable installs and tests).
 
 ```yaml
 models:                         # named models; agents refer to these names
@@ -65,13 +65,13 @@ data_dir: null                  # override where sessions, index, facts and audi
 ## Model guidance
 
 - Give every agent that shares a model the same `num_ctx` (a different value forces a reload).
-- The executor needs a model with tool calling (`deskaide doctor` checks the capability flag).
-  Models under ~4B parameters make more argument mistakes; measure with `deskaide eval agent`.
-- Tune `retrieval.*` with `deskaide eval retrieval --embeddings -v` rather than by feel.
+- The executor needs a model with tool calling (`tala doctor` checks the capability flag).
+  Models under ~4B parameters make more argument mistakes; measure with `tala eval agent`.
+- Tune `retrieval.*` with `tala eval retrieval --embeddings -v` rather than by feel.
 
 ## Files
 
-| File | Location (`<config>` / `<data>` from `deskaide doctor`) |
+| File | Location (`<config>` / `<data>` from `tala doctor`) |
 | --- | --- |
 | Config | `<config>/config.yaml` |
 | User packs | `<config>/packs/` |
