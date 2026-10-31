@@ -39,6 +39,7 @@ def _ollama_chat(model: ModelSettings, agent: AgentSettings) -> BaseChatModel:
         base_url=model.base_url,
         temperature=agent.temperature,
         num_ctx=model.num_ctx,
+        num_thread=model.num_thread,
         num_predict=agent.max_tokens,
         keep_alive=model.keep_alive,
         reasoning=agent.think,  # explicit False stops thinking-capable models from reasoning

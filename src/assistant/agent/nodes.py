@@ -54,6 +54,11 @@ MAX_CALLS_PER_MESSAGE = 5
 MAX_PARALLEL_READS = 4
 PREVIEW_CHARS = 2000
 _MIN_HISTORY_TOKENS = 512
+# One tool output may use at most this many characters per token of context window. Symbol-heavy
+# output (directory trees, tables) is only ~2 characters per token, and a prompt that overflows the
+# window is silently cut at the start by the server, which drops the instructions.
+_OUTPUT_CHARS_PER_CTX_TOKEN = 0.8
+_MIN_OUTPUT_CHARS = 500
 
 
 @dataclass
@@ -104,6 +109,13 @@ class AgentNodes:
         budget = max(budget - (agent_cfg.max_tokens or 0), _MIN_HISTORY_TOKENS)
         compacted = compact_old_tool_outputs(messages, cfg.runtime.recent_turns_full_tools)
         return fit_to_budget(compacted, budget)
+
+    def _output_cap(self) -> int:
+        """Characters of one tool output the model may see: the setting, bounded by the window."""
+        cfg = self._d.settings
+        window = min(cfg.models[cfg.agents[a].model].num_ctx for a in ("executor", "summarizer"))
+        fits = int(window * _OUTPUT_CHARS_PER_CTX_TOKEN)
+        return max(_MIN_OUTPUT_CHARS, min(cfg.runtime.tool_output_chars, fits))
 
     def _prompt(self, agent: str, state: AgentState, reserved_tokens: int = 0) -> list[BaseMessage]:
         system = self._system(agent)
@@ -460,9 +472,7 @@ class AgentNodes:
                 truncated=truncated,
             )
         )
-        fenced = fence_tool_output(
-            call["name"], call["id"], text, max_chars=self._d.settings.runtime.tool_output_chars
-        )
+        fenced = fence_tool_output(call["name"], call["id"], text, max_chars=self._output_cap())
         spec = self._d.registry.available.get(call["name"])
         keep_original = bool(spec and spec.offer_original and status == "ok" and text.strip())
         return ToolMessage(

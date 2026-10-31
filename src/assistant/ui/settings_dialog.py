@@ -211,13 +211,14 @@ class SettingsDialog(QDialog):
         step: int = 1,
         suffix: str = "",
         no_limit: bool = False,
+        special: str = "No limit",
     ) -> QSpinBox:
         spin = QSpinBox()
         spin.setRange(0 if no_limit else low, high)
         spin.setSingleStep(step)
         spin.setSuffix(suffix)
         if no_limit:
-            spin.setSpecialValueText("No limit")
+            spin.setSpecialValueText(special)
         spin.setValue(int(self._value(paths[0], 0) or 0))
         self._bind(paths, lambda: (spin.value() or None) if no_limit else spin.value())
         return spin
@@ -310,11 +311,30 @@ class SettingsDialog(QDialog):
             "A small, fast model that decides whether a request needs a tool.",
         )
         form.addRow("", self._router_status)
+        self._ctx = self._spin(("models.main.num_ctx",), 1024, 131072, step=1024, suffix=" tokens")
         self._row(
             form,
             "Memory per conversation",
-            self._spin(("models.main.num_ctx",), 1024, 131072, step=1024, suffix=" tokens"),
-            "How much of the conversation the model can see. Larger uses more RAM.",
+            self._ctx,
+            "How much of the conversation the model can see. Larger uses more RAM and is slower on a CPU.",
+        )
+        current_keep = str(self._value("models.main.keep_alive", "30m"))
+        keep_options = [
+            ("5m", "5 minutes"),
+            ("30m", "30 minutes"),
+            ("2h", "2 hours"),
+            ("24h", "All day (24 hours)"),
+        ]
+        if current_keep not in {v for v, _t in keep_options}:
+            keep_options.append((current_keep, current_keep))
+        self._keep_alive = self._choice(
+            ("models.main.keep_alive", "models.router.keep_alive"), keep_options, current_keep
+        )
+        self._row(
+            form,
+            "Keep models loaded for",
+            self._keep_alive,
+            "Loading a model is slow on a CPU. Longer keeps answers quick but holds RAM.",
         )
         layout.addWidget(models)
 
@@ -639,25 +659,31 @@ class SettingsDialog(QDialog):
 
     def _behaviour_tab(self) -> QWidget:
         page = QWidget()
-        form = self._form(page)
+        outer = QVBoxLayout(page)
+        outer.addWidget(self._cpu_preset_group())
+        content = QWidget()
+        outer.addWidget(content)
+        outer.addStretch(1)
+        form = self._form(content)
         self._row(
             form,
             "Creativity",
             self._decimal(("agents.chat.temperature",), 0.0, 2.0, 0.05),
             "Low = precise and repeatable, high = more varied wording. 0.6 suits chat.",
         )
+        self._reply = self._spin(
+            ("agents.chat.max_tokens", "agents.summarizer.max_tokens"),
+            50,
+            8000,
+            step=50,
+            suffix=" tokens",
+            no_limit=True,
+        )
         self._row(
             form,
             "Longest reply",
-            self._spin(
-                ("agents.chat.max_tokens", "agents.summarizer.max_tokens"),
-                50,
-                8000,
-                step=50,
-                suffix=" tokens",
-                no_limit=True,
-            ),
-            "A token is roughly three quarters of a word.",
+            self._reply,
+            "A token is roughly three quarters of a word. Every token costs the same on a CPU.",
         )
         self._row(
             form,
@@ -674,27 +700,29 @@ class SettingsDialog(QDialog):
             self._spin(("runtime.max_steps",), 1, 10),
             "How many rounds of tool use the assistant may take for one request.",
         )
-        self._row(
-            form,
-            "Follow-up steps",
-            self._choice(
-                ("runtime.followups",),
-                [
-                    ("auto", "Only when the request has several parts"),
-                    ("always", "Always let the model decide"),
-                    ("never", "Never (fastest)"),
-                ],
-                self._value("runtime.followups", "auto"),
-            ),
+        self._followups = self._choice(
+            ("runtime.followups",),
+            [
+                ("auto", "Only when the request has several parts"),
+                ("always", "Always let the model decide"),
+                ("never", "Never (fastest)"),
+            ],
+            self._value("runtime.followups", "auto"),
+        )
+        self._row(form, "Follow-up steps", self._followups)
+        self._fast_path = self._checkbox(
+            ("runtime.fast_path",), "Skip the model for obvious, simple tools"
         )
         self._row(
             form,
             "",
-            self._checkbox(("runtime.fast_path",), "Skip the model for obvious, simple tools"),
+            self._fast_path,
             "For things like “how much disk space is free?” the tool just runs.",
         )
         shown = int(self._value("runtime.direct_output_chars", 0)) > 0
-        direct = QCheckBox("Show short results exactly as they are, without a summary")
+        direct = self._direct = QCheckBox(
+            "Show short results exactly as they are, without a summary"
+        )
         direct.setChecked(shown)
         self._bind(
             ("runtime.direct_output_chars",),
@@ -710,6 +738,40 @@ class SettingsDialog(QDialog):
             ),
         )
         return page
+
+    def _cpu_preset_group(self) -> QGroupBox:
+        group = QGroupBox("Quick preset")
+        column = QVBoxLayout(group)
+        intro = _label(
+            "On a PC without a supported graphics card, speed comes from fewer, shorter model "
+            "calls. This sets: small conversation memory (4096), replies up to 300 tokens, no "
+            "extra follow-up steps, simple tools skip the model, short results shown as they "
+            "are, and models stay loaded all day. Press Save afterwards to apply.",
+            "help",
+        )
+        intro.setWordWrap(True)
+        button = QPushButton("Fast on a CPU-only PC")
+        button.setProperty("primary", True)
+        button.clicked.connect(self._apply_cpu_preset)
+        self._preset_note = _label("", "ok")
+        column.addWidget(intro)
+        column.addWidget(button, 0, Qt.AlignmentFlag.AlignLeft)
+        column.addWidget(self._preset_note)
+        return group
+
+    def _apply_cpu_preset(self) -> None:
+        """Fill in the controls (nothing is written until Save); the model choice is left alone."""
+        self._ctx.setValue(4096)
+        self._reply.setValue(300)
+        self._followups.setCurrentIndex(self._followups.findData("never"))
+        self._fast_path.setChecked(True)
+        self._direct.setChecked(True)
+        index = self._keep_alive.findData("24h")
+        if index < 0:
+            self._keep_alive.addItem("All day (24 hours)", "24h")
+            index = self._keep_alive.findData("24h")
+        self._keep_alive.setCurrentIndex(index)
+        _say(self._preset_note, "Preset filled in. Press Save to apply.", "ok")
 
     # -- tab: safety -------------------------------------------------------------------------
 
@@ -975,6 +1037,37 @@ class SettingsDialog(QDialog):
             "Fewer is faster and suits small models; more finds unusual tools.",
         )
         layout.addWidget(group)
+
+        cpu = QGroupBox("Processor")
+        cpu_form = self._form(cpu)
+        self._row(
+            cpu_form,
+            "CPU threads",
+            self._spin(
+                ("models.main.num_thread", "models.router.num_thread"),
+                1,
+                256,
+                no_limit=True,
+                special="Automatic",
+            ),
+            "Leave on Automatic, or try your number of physical cores (not hyperthreads). "
+            "Too many threads can slow answers down.",
+        )
+        layout.addWidget(cpu)
+
+        server = QGroupBox(
+            "Make Ollama itself faster (set as environment variables, then restart Ollama)"
+        )
+        tips = _label(
+            "OLLAMA_FLASH_ATTENTION=1   uses less memory\n"
+            "OLLAMA_KV_CACHE_TYPE=q8_0   shrinks the conversation cache when RAM is tight\n"
+            "OLLAMA_NUM_PARALLEL=1   one request at a time, less memory reserved\n"
+            "OLLAMA_KEEP_ALIVE=24h   keep models loaded (this app already sets its own)",
+            "help",
+        )
+        tips.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        QVBoxLayout(server).addWidget(tips)
+        layout.addWidget(server)
 
         files = QGroupBox("Files")
         column = QVBoxLayout(files)

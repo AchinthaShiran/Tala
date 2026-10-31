@@ -16,6 +16,7 @@ models:                         # named models; agents refer to these names
     keep_alive: "30m"
     base_url: "http://localhost:11434"
     request_timeout: 120
+    num_thread: null            # CPU threads; try your physical core count (not hyperthreads)
   main:
     name: "gemma4:e2b"
     num_ctx: 8192

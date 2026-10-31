@@ -39,6 +39,7 @@ QPushButton:hover { background: #3b4880; }
 QPushButton:disabled { background: #232a45; color: #5f688d; }
 QPushButton[primary="true"] { background: #4a69d8; }
 QPushButton[primary="true"]:hover { background: #5a78e6; }
+QPushButton[primary="true"]:disabled { background: #232a45; color: #5f688d; }
 QPushButton[danger="true"] { background: #7a2e3b; }
 QPushButton[danger="true"]:hover { background: #94384a; }
 QProgressBar { background: #11162a; border: 1px solid #323a58; border-radius: 6px; height: 10px;

@@ -209,3 +209,38 @@ def test_library_buttons_pick_models_without_saving(dialog):
     assert dialog.collect_changes() == {"models.main.name": "gemma4:e4b"}
     dialog._library.selectRow(tags.index("granite4.1:3b"))
     assert dialog._lib_router.isEnabled()
+
+
+def test_cpu_preset_fills_controls_but_writes_nothing_until_save(dialog):
+    dialog._apply_cpu_preset()
+    changes = dialog.collect_changes()
+    assert changes["models.main.num_ctx"] == 4096
+    assert changes["agents.chat.max_tokens"] == 300 == changes["agents.summarizer.max_tokens"]
+    assert changes["runtime.followups"] == "never"
+    assert changes["runtime.direct_output_chars"] > 0
+    assert changes["models.main.keep_alive"] == "24h" == changes["models.router.keep_alive"]
+    assert "models.main.name" not in changes  # the model choice is never touched
+    assert not dialog._store.path.exists()
+    dialog._save()
+    saved = dialog._store.load()
+    assert saved.models["main"].num_ctx == 4096 and saved.runtime.followups == "never"
+
+
+def test_cpu_threads_default_to_automatic_and_can_be_set(dialog):
+    from PySide6.QtWidgets import QSpinBox
+
+    assert "models.main.num_thread" not in dialog.collect_changes()
+    spin = next(s for s in dialog.findChildren(QSpinBox) if s.specialValueText() == "Automatic")
+    spin.setValue(4)
+    changes = dialog.collect_changes()
+    assert changes["models.main.num_thread"] == 4 == changes["models.router.num_thread"]
+    dialog._save()
+    assert dialog._store.load().models["router"].num_thread == 4
+
+
+def test_num_thread_reaches_the_ollama_client():
+    from assistant.config import AgentSettings, ModelSettings
+    from assistant.llm.factory import build_chat_model
+
+    model = build_chat_model(ModelSettings(name="x", num_thread=6), AgentSettings(model="m"))
+    assert model.num_thread == 6  # type: ignore[attr-defined]

@@ -27,6 +27,7 @@ class ModelSettings(_Section):
     keep_alive: str | None = "30m"
     base_url: str = "http://localhost:11434"
     request_timeout: float = Field(default=120.0, gt=0)
+    num_thread: int | None = Field(default=None, ge=1)  # CPU threads; None = let Ollama choose
 
 
 class EmbeddingSettings(_Section):

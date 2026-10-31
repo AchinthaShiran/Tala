@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 
 from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QGuiApplication, QKeyEvent, QResizeEvent, QWheelEvent
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QFrame,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QTableWidget,
+    QTableWidgetItem,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
@@ -31,10 +36,13 @@ from assistant.domain import (
     ToolProposedEvent,
     ToolResultEvent,
 )
+from assistant.ui.formatting import TableOutput, TextOutput, parse_output
 from assistant.ui.state import STATUS_TEXT, Mood
 
 CHAT_SIZE = (380, 540)
 _OUTPUT_LIMIT = 4000  # characters of tool output kept in a step card
+
+_ORIGINAL_PREFIX = re.compile(r"Original output of ([^\n:]+):\n\n")  # see domain.original
 
 _RISK_COLOR = {
     RiskLevel.READ_ONLY: "#5be37d",
@@ -69,6 +77,13 @@ QTextBrowser { font-size: 13px; background: transparent; border: none; }
 #toolstate[status="denied"] { color: #ffc247; }
 QTextBrowser[mono="true"] { font-family: Consolas, 'Cascadia Mono', monospace; font-size: 11px;
                             color: #cfe3ff; background: #161b2e; border-radius: 6px; }
+#outtable { background: #161b2e; alternate-background-color: #1a2038; border: none;
+            border-radius: 6px; color: #cfe3ff; font-size: 11px; }
+#outtable QHeaderView::section { background: #232a45; color: #98a2c8; border: none;
+                                 padding: 3px 8px; font-size: 11px; font-weight: 600; }
+#outtable::item { padding: 0 8px; }
+#outtable::item:selected { background: #2f3a63; color: white; }
+#caption { color: #98a2c8; font-size: 11px; }
 #link { background: transparent; color: #7f9cff; padding: 0; font-size: 11px; }
 #link:hover { color: #a9bcff; background: transparent; }
 #activity { color: #98a2c8; font-size: 12px; font-style: italic; padding: 2px 4px; }
@@ -111,11 +126,16 @@ class _AutoText(QTextBrowser):
     can leave a bubble thousands of pixels tall and the chat looking empty.
     """
 
+    MONO_MAX_HEIGHT = 280  # long tool output scrolls inside its box instead of taking over the chat
+
     def __init__(self, *, mono: bool = False) -> None:
         super().__init__()
+        self._max_height = self.MONO_MAX_HEIGHT if mono else None
         self.setFrameShape(QFrame.Shape.NoFrame)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded if mono else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         # Selectable but never navigable: model output must not be able to open links or files.
         self.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -128,7 +148,8 @@ class _AutoText(QTextBrowser):
         self._fit()
 
     def _fit(self) -> None:
-        self.setFixedHeight(int(self.document().size().height()) + 2)
+        height = int(self.document().size().height()) + 2
+        self.setFixedHeight(min(height, self._max_height) if self._max_height else height)
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         super().resizeEvent(event)
@@ -136,7 +157,10 @@ class _AutoText(QTextBrowser):
         self._fit()
 
     def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802
-        event.ignore()  # let the chat scroll
+        if self.verticalScrollBar().maximum() > 0:
+            super().wheelEvent(event)  # a long output scrolls inside its own box
+        else:
+            event.ignore()  # nothing to scroll here: let the chat scroll
 
     def loadResource(self, _type: int, _name: object) -> None:  # noqa: N802
         return None  # never fetch images or files named by model output
@@ -155,6 +179,7 @@ class _Bubble(QFrame):
         layout.setContentsMargins(11, 8, 11, 8)
         self._view = _AutoText()
         layout.addWidget(self._view)
+        self._column = layout
         self.append(text)
 
     def append(self, text: str) -> None:
@@ -163,6 +188,38 @@ class _Bubble(QFrame):
             self._view.setMarkdown(self._text)
         else:
             self._view.setPlainText(self._text)
+
+    def finalize(self) -> None:
+        """Called when the reply is complete: show raw tool output as a table / JSON / monospace.
+
+        The assistant sometimes sends a tool's output verbatim (short results shown as they are, or
+        "Original output of <tool>:"). Markdown would collapse its line breaks and turn the dashes
+        under a header into a rule, so such messages get the same views as a tool card instead.
+        """
+        if not self._markdown:
+            return
+        text = self._text.strip()
+        match = _ORIGINAL_PREFIX.match(text)
+        body = text[match.end() :] if match else text
+        parsed = parse_output(body)
+        structured = isinstance(parsed, TableOutput) or (
+            isinstance(parsed, TextOutput) and parsed.kind == "json"
+        )
+        if not structured and match is None:
+            return
+        layout = self._column
+        layout.removeWidget(self._view)
+        self._view.deleteLater()
+        if match is not None:
+            caption = QLabel(f"Original output of {match.group(1)}")
+            caption.setObjectName("caption")
+            layout.addWidget(caption)
+        layout.addWidget(_build_output(body, limit=None))
+        copy = QPushButton("Copy")
+        copy.setObjectName("link")
+        copy.setCursor(Qt.CursorShape.PointingHandCursor)
+        copy.clicked.connect(lambda: QGuiApplication.clipboard().setText(body))
+        layout.addWidget(copy, 0, Qt.AlignmentFlag.AlignLeft)
 
     @property
     def text_content(self) -> str:
@@ -228,16 +285,21 @@ class _ToolRow(QFrame):
         command.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(command)
 
+        links = QHBoxLayout()
         self._toggle = QPushButton("Show output")
-        self._toggle.setObjectName("link")
-        self._toggle.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._copy = QPushButton("Copy")
+        for button in (self._toggle, self._copy):
+            button.setObjectName("link")
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            button.hide()
+            links.addWidget(button)
+        links.addStretch(1)
         self._toggle.clicked.connect(self._flip)
-        self._toggle.hide()
-        layout.addWidget(self._toggle, 0, Qt.AlignmentFlag.AlignLeft)
-        self._output = _AutoText(mono=True)
-        self._output.setObjectName("tooloutput")
-        self._output.hide()
-        layout.addWidget(self._output)
+        self._copy.clicked.connect(self._copy_output)
+        layout.addLayout(links)
+        self._raw = ""
+        self._output: QWidget | None = None
+        self._layout = layout
 
     def finish(self, event: ToolResultEvent) -> None:
         self.status = event.status
@@ -248,17 +310,93 @@ class _ToolRow(QFrame):
         self._state.style().polish(self._state)
         text = event.output.strip()
         if text:
-            if len(text) > _OUTPUT_LIMIT:
-                text = text[:_OUTPUT_LIMIT] + "\n\u2026 (truncated)"
-            self._output.setPlainText(text)
+            self._raw = text
+            self._output = _build_output(text)
+            self._output.hide()
+            self._layout.addWidget(self._output)
             self._toggle.show()
+            self._copy.show()
             if event.status != "ok":  # failures are shown straight away, like the terminal
                 self._flip()
 
     def _flip(self) -> None:
+        if self._output is None:
+            return
         show = self._output.isHidden()
         self._output.setVisible(show)
         self._toggle.setText("Hide output" if show else "Show output")
+
+    def _copy_output(self) -> None:
+        QGuiApplication.clipboard().setText(self._raw)
+        self._copy.setText("Copied")
+        QTimer.singleShot(1500, lambda: self._copy.setText("Copy"))
+
+
+class _OutputTable(QTableWidget):
+    """A tool's tabular output as a real table: numbers right-aligned, header pinned."""
+
+    ROW_HEIGHT = 24
+    MAX_VISIBLE_ROWS = 8
+
+    def __init__(self, table: TableOutput) -> None:
+        super().__init__(len(table.rows), len(table.headers))
+        self.setObjectName("outtable")
+        self.setHorizontalHeaderLabels(table.headers)
+        self.verticalHeader().hide()
+        self.verticalHeader().setDefaultSectionSize(self.ROW_HEIGHT)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setAlternatingRowColors(True)
+        self.setShowGrid(False)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        numeric = table.numeric
+        for r, row in enumerate(table.rows):
+            for c, cell in enumerate(row):
+                item = QTableWidgetItem(cell)
+                if numeric[c]:
+                    item.setTextAlignment(
+                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                    )
+                self.setItem(r, c, item)
+        header = self.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        header.setStretchLastSection(not numeric[-1])  # a stretched number column looks adrift
+        for c, is_number in enumerate(numeric):
+            head = self.horizontalHeaderItem(c)
+            if head is not None and is_number:
+                head.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        shown = min(len(table.rows), self.MAX_VISIBLE_ROWS)
+        scrollbar = self.horizontalScrollBar().sizeHint().height()
+        self.setFixedHeight(header.sizeHint().height() + shown * self.ROW_HEIGHT + scrollbar + 4)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802
+        if self.verticalScrollBar().maximum() == 0:
+            event.ignore()  # nothing to scroll here: let the chat scroll
+        else:
+            super().wheelEvent(event)
+
+
+def _build_output(text: str, limit: int | None = _OUTPUT_LIMIT) -> QWidget:
+    """Pick the best view for a tool's output (see ``formatting`` for the schema)."""
+    parsed = parse_output(text)
+    box = QWidget()
+    column = QVBoxLayout(box)
+    column.setContentsMargins(0, 0, 0, 0)
+    column.setSpacing(3)
+    if isinstance(parsed, TableOutput):
+        column.addWidget(_OutputTable(parsed))
+        if parsed.hidden_rows:
+            more = QLabel(f"\u2026 and {parsed.hidden_rows} more rows (use Copy for everything)")
+            more.setObjectName("toolstate")
+            column.addWidget(more)
+        return box
+    shown = parsed.text
+    if limit is not None and len(shown) > limit:
+        shown = shown[:limit] + "\n\u2026 (truncated, use Copy for everything)"
+    view = _AutoText(mono=True)
+    view.setPlainText(shown)
+    column.addWidget(view)
+    return box
 
 
 class _ApprovalCard(QFrame):
@@ -479,7 +617,9 @@ class ChatWindow(QWidget):
         for turn in turns:
             role, text = getattr(turn, "role", ""), getattr(turn, "text", "")
             if text:
-                self._add(_Bubble("user" if role == "user" else "assistant", text))
+                bubble = _Bubble("user" if role == "user" else "assistant", text)
+                self._add(bubble)
+                bubble.finalize()
 
     # -- events ------------------------------------------------------------------------------
 
@@ -506,7 +646,10 @@ class ChatWindow(QWidget):
         elif isinstance(event, FinalEvent):
             self._hide_activity()
             if self._bubble is None and event.text:
-                self._add(_Bubble("assistant", event.text))
+                self._bubble = _Bubble("assistant", event.text)
+                self._add(self._bubble)
+            if self._bubble is not None:
+                self._bubble.finalize()
             self._bubble = None
             self._finish_turn()
         elif isinstance(event, ErrorEvent):

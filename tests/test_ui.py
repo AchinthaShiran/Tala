@@ -155,3 +155,23 @@ def test_confirm_mode_requires_typing_the_tool_name(qapp):
 def test_assistant_text_cannot_open_links(qapp):
     bubble = _Bubble("assistant", "[click](https://example.com)")
     assert not bubble.openExternalLinks()
+
+
+def test_tool_output_renders_as_a_table_and_can_be_copied(qapp):
+    from PySide6.QtWidgets import QApplication as App
+
+    from assistant.ui.chat import _OutputTable, _ToolRow
+
+    proposed = ToolProposedEvent(
+        call_id="1", tool="disk_free", arguments={}, risk=RiskLevel.READ_ONLY, command="c"
+    )
+    row = _ToolRow(proposed)
+    from assistant.domain import ToolResultEvent
+
+    text = "Name UsedGB FreeGB\n---- ------ ------\nC 224.4 6.4\nD 192.2 52.3\n"
+    row.finish(ToolResultEvent(call_id="1", tool="disk_free", status="ok", output=text))
+    tables = row.findChildren(_OutputTable)
+    assert len(tables) == 1 and tables[0].rowCount() == 2 and tables[0].columnCount() == 3
+    assert tables[0].item(0, 1).text() == "224.4"
+    row._copy.click()
+    assert App.clipboard().text() == text.strip()

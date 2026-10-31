@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+- A tool's output sent to the model is now also limited to what fits the model's context window (about
+  0.8 characters per token). Long, symbol-heavy output such as a `tree` listing could overflow a small
+  `num_ctx`, which made the server cut off the start of the prompt (the instructions) and the model
+  answer without them.
+
 ### Added
 - Desktop pet (`tala ui`, or `tala-ui` with no console window): a small animated, always-on-top character
   you drag anywhere and click to chat. Replies stream into the chat, tool calls show as they run, and
