@@ -355,6 +355,7 @@ class ChatWindow(QWidget):
     decisions_made = Signal(object)  # {call_id: bool}
     reset_requested = Signal()
     hidden_by_user = Signal()
+    settings_requested = Signal()
 
     def __init__(self, name: str) -> None:
         super().__init__()
@@ -435,6 +436,12 @@ class ChatWindow(QWidget):
         titles.addWidget(title)
         titles.addWidget(self._status)
         row.addLayout(titles, 1)
+        gear = QPushButton("Settings")
+        gear.setObjectName("link")
+        gear.setCursor(Qt.CursorShape.PointingHandCursor)
+        gear.setToolTip("Open settings")
+        gear.clicked.connect(self.settings_requested)
+        row.addWidget(gear)
         close = QPushButton("✕")
         close.setObjectName("close")
         close.setToolTip("Hide the chat (the pet stays)")
@@ -450,6 +457,13 @@ class ChatWindow(QWidget):
         self._update_enabled()
         self.set_mood(Mood.IDLE)
         self._status.setToolTip(f"{tool_count} tools available on this PC")
+
+    def set_loading(self, text: str) -> None:
+        """The assistant is restarting (new settings): no input until it is ready again."""
+        self._ready = False
+        self._input.setPlaceholderText(text)
+        self._status.setText(text)
+        self._update_enabled()
 
     def set_failed(self, message: str) -> None:
         self.add_error(message)

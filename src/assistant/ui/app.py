@@ -7,17 +7,19 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QLockFile, QObject, QSettings, QThread, Signal
+from PySide6.QtCore import QLockFile, QObject, QSettings, Qt, QThread, Signal
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from assistant import __version__
 from assistant.bootstrap import Runtime, build_runtime
-from assistant.config import default_paths, load_settings
+from assistant.config import AppPaths, default_paths, load_settings
 from assistant.domain import ApprovalRequestedEvent, ErrorEvent, Event, FinalEvent
 from assistant.domain.branding import APP_NAME
 from assistant.ui.chat import ChatWindow
+from assistant.ui.config_store import ConfigStore
 from assistant.ui.pet import PetWidget, render_icon
+from assistant.ui.settings_dialog import SettingsDialog
 from assistant.ui.state import Mood, mood_for
 from assistant.ui.worker import AssistantWorker
 
@@ -32,6 +34,7 @@ class DesktopPet(QObject):
     _resume = Signal(object)
     _reset = Signal()
     _shutdown = Signal()
+    _restart = Signal()
 
     def __init__(
         self,
@@ -40,9 +43,15 @@ class DesktopPet(QObject):
         *,
         session: str = "default",
         settings: QSettings | None = None,
+        config_store: ConfigStore | None = None,
+        paths: AppPaths | None = None,
     ) -> None:
         super().__init__()
         self._app = app
+        self._config_store = config_store
+        self._paths = paths
+        self._dialog: SettingsDialog | None = None
+        self._applying = False
         settings = settings or QSettings(APP_NAME, f"{APP_NAME} Desktop")
         self.pet = PetWidget(settings)
         self.chat = ChatWindow(APP_NAME)
@@ -85,6 +94,7 @@ class DesktopPet(QObject):
         self._resume.connect(worker.resume)
         self._reset.connect(worker.reset)
         self._shutdown.connect(worker.shutdown)
+        self._restart.connect(worker.restart)
 
         worker.ready.connect(self._on_ready)
         worker.failed.connect(self._on_failed)
@@ -93,6 +103,7 @@ class DesktopPet(QObject):
 
         chat.message_submitted.connect(self._on_submit)
         chat.decisions_made.connect(self._on_decisions)
+        chat.settings_requested.connect(self.open_settings)
         chat.hidden_by_user.connect(lambda: self._sync_toggle())
         pet.clicked.connect(self.toggle_chat)
         pet.moved.connect(self._follow_pet)
@@ -111,11 +122,14 @@ class DesktopPet(QObject):
         self._toggle_action.triggered.connect(self.toggle_chat)
         new = QAction("New conversation", menu)
         new.triggered.connect(self.new_conversation)
+        settings_action = QAction("Settings…", menu)
+        settings_action.setEnabled(self._config_store is not None)
+        settings_action.triggered.connect(self.open_settings)
         about = QAction(f"{APP_NAME} {__version__}", menu)
         about.setEnabled(False)
         quit_ = QAction("Quit", menu)
         quit_.triggered.connect(self.quit)
-        for action in (self._toggle_action, new):
+        for action in (self._toggle_action, new, settings_action):
             menu.addAction(action)
         menu.addSeparator()
         menu.addAction(about)
@@ -146,6 +160,30 @@ class DesktopPet(QObject):
         self.chat.clear()
         self.chat.add_note("Fresh start. What can I do for you?")
 
+    def open_settings(self) -> None:
+        """Show the settings window (one at a time); saving restarts the assistant."""
+        if self._config_store is None or self._paths is None:
+            return
+        if self._dialog is not None:
+            self._dialog.raise_()
+            self._dialog.activateWindow()
+            return
+        dialog = SettingsDialog(self._config_store, self._paths)
+        dialog.saved.connect(self._apply_settings)
+        dialog.new_conversation_requested.connect(self.new_conversation)
+        dialog.finished.connect(lambda _r: setattr(self, "_dialog", None))
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self._dialog = dialog
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _apply_settings(self) -> None:
+        self._applying = True
+        self.chat.set_loading("Applying settings…")
+        self._set_mood(Mood.THINKING)
+        self._restart.emit()
+
     def _sync_toggle(self) -> None:
         self._toggle_action.setText("Hide chat" if self.chat.isVisible() else "Open chat")
 
@@ -164,8 +202,12 @@ class DesktopPet(QObject):
     def _on_ready(self, tool_count: int) -> None:
         self.chat.set_ready(tool_count)
         self.pet.set_mood(Mood.IDLE)
+        if self._applying:
+            self._applying = False
+            self.chat.add_note("Settings applied.")
 
     def _on_failed(self, message: str) -> None:
+        self._applying = False
         self.chat.set_failed(message)
         self.pet.set_mood(Mood.ERROR)
         self._alert("Could not start", message)
@@ -216,7 +258,8 @@ def run_ui(config: Path | None = None, session: str = "default") -> int:
     app.setQuitOnLastWindowClosed(False)  # the pet and tray outlive the chat window
     app.setWindowIcon(QIcon(render_icon()))
 
-    settings = load_settings(config or default_paths().config_file)
+    config_file = config or default_paths().config_file
+    settings = load_settings(config_file)
     paths = default_paths(settings.data_dir)
     paths.ensure()
     lock = QLockFile(str(paths.data_dir / "desktop.lock"))
@@ -224,7 +267,18 @@ def run_ui(config: Path | None = None, session: str = "default") -> int:
         print(f"{APP_NAME} is already running on the desktop.", file=sys.stderr)
         return 1
 
-    pet = DesktopPet(app, lambda: build_runtime(settings, paths), session=session)
+    def build() -> Runtime:
+        # Re-read the file each time so a restart after the settings page picks up the changes.
+        fresh = load_settings(config_file)
+        return build_runtime(fresh, default_paths(fresh.data_dir))
+
+    pet = DesktopPet(
+        app,
+        build,
+        session=session,
+        config_store=ConfigStore(config_file),
+        paths=paths,
+    )
     pet.start()
     code = app.exec()
     lock.unlock()

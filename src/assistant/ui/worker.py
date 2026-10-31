@@ -33,6 +33,17 @@ class AssistantWorker(QObject):
 
     @Slot()
     def start(self) -> None:
+        self._boot(first=True)
+
+    @Slot()
+    def restart(self) -> None:
+        """Rebuild the runtime from the current settings file (after the settings page saved)."""
+        if self._runtime is not None:
+            self._runtime.close()
+            self._runtime = None
+        self._boot(first=False)
+
+    def _boot(self, *, first: bool) -> None:
         try:
             runtime = self._factory()
         except AssistantError as exc:
@@ -45,9 +56,10 @@ class AssistantWorker(QObject):
         self._runtime = runtime
         runtime.start_warmup()  # load models while the user is still reading the greeting
         assistant = runtime.assistant
-        self.history.emit(assistant.history(self._session))
+        if first:
+            self.history.emit(assistant.history(self._session))
         self.ready.emit(len(runtime.registry))
-        pending = assistant.pending_approval(self._session)
+        pending = assistant.pending_approval(self._session) if first else None
         if pending is not None:  # the app was closed while a tool call awaited approval
             self.emitted.emit(pending)
 

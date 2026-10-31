@@ -8,6 +8,11 @@
   commands that need approval appear as cards with the exact command (Deny is the default; destructive tools
   need their name typed). It shows its mood (working, replying, waiting for you), badges itself when it needs
   you while the chat is closed, and lives in the system tray. Optional extra: `pip install "tala-ai[ui]"`.
+- Settings window for the desktop pet (gear in the chat header, or right-click the pet): Ollama address
+  with a live connection check, model pickers that show what is downloaded (with a download button),
+  behaviour, safety levels in plain words, a searchable list of every tool (switch it off or change its
+  approval), saved facts, and shortcuts to the config, packs and data folders. Saving writes only what you
+  changed to `config.yaml` (keeping a `.bak`), rejects invalid values, and restarts the assistant.
 
 ## 3.0.2
 
