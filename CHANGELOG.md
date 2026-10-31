@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Desktop pet (`tala ui`, or `tala-ui` with no console window): a small animated, always-on-top character
+  you drag anywhere and click to chat. Replies stream into the chat, tool calls show as they run, and
+  commands that need approval appear as cards with the exact command (Deny is the default; destructive tools
+  need their name typed). It shows its mood (working, replying, waiting for you), badges itself when it needs
+  you while the chat is closed, and lives in the system tray. Optional extra: `pip install "tala-ai[ui]"`.
+
 ## 3.0.2
 
 ### Fixed

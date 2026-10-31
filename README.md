@@ -70,6 +70,7 @@ Other commands:
 | Command | Purpose |
 | --- | --- |
 | `tala setup [--default\|--recommended\|--advanced] [--check]` | First-run wizard: hardware-aware setup and model downloads |
+| `tala ui` | Desktop pet: an always-on-top character you click to chat (needs `pip install "tala-ai[ui]"`) |
 | `tala ask "..."` | One question, then exit |
 | `tala packs list [--all]` | Tools available here (and why others are not) |
 | `tala packs show NAME` | Full definition of a tool |

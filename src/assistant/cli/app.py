@@ -118,6 +118,25 @@ def chat(
 
 
 @app.command()
+def ui(
+    session: Annotated[
+        str, typer.Option("--session", "-s", help="Session name (resumable)")
+    ] = "default",
+    config: ConfigOpt = None,
+) -> None:
+    """Start the desktop pet: a small always-on-top character you click to chat with."""
+    try:
+        from assistant.ui.app import run_ui
+    except ImportError as exc:
+        raise _fail(
+            "The desktop pet needs PySide6. Install it with: pip install PySide6-Essentials"
+        ) from exc
+    code = run_ui(config, session)
+    if code:
+        raise typer.Exit(code=code)
+
+
+@app.command()
 def ask(
     question: Annotated[str, typer.Argument(help="What to ask or do")],
     session: Annotated[str, typer.Option("--session", "-s")] = "oneshot",

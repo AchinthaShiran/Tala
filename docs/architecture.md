@@ -9,6 +9,7 @@ against the contract in `pyproject.toml`, so a violation fails the build.
 
 ```
 cli                         presentation only (typer, rich)
+ui                          desktop pet (PySide6): pet, chat window, tray, worker thread
 bootstrap | evaluation      composition root | golden-set evaluation
 service                     Assistant.send()/resume() -> typed events
 agent                       LangGraph nodes and graph
@@ -81,7 +82,7 @@ Key properties:
 | --- | --- |
 | A capability | A YAML pack (no code) |
 | An LLM provider | `llm.register_provider("name", chat_builder, embeddings_builder)` and `provider: name` in config |
-| A front end | Consume `Assistant.send()/resume()` events (see `cli/render.py`); an HTTP adapter serialises the same pydantic events |
+| A front end | Consume `Assistant.send()/resume()` events (see `cli/render.py`, `ui/`); an HTTP adapter serialises the same pydantic events |
 | A tool type beyond subprocess (script, HTTP, MCP) | Add a variant kind in `domain.tool` and a runner in `tools`; the policy, audit and approval flow stay unchanged |
 | A safety rule | `safety.policy.PolicyEngine.decide` (covered by invariant tests) |
 | Long-lived memory beyond facts | `memory/` behind the same prompt-injection point in `agent.nodes._system` |
