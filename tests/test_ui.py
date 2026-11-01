@@ -175,3 +175,26 @@ def test_tool_output_renders_as_a_table_and_can_be_copied(qapp):
     assert tables[0].item(0, 1).text() == "224.4"
     row._copy.click()
     assert App.clipboard().text() == text.strip()
+
+
+def test_battery_readings_drive_the_pet_and_the_bubble(qapp, pet):
+    from assistant.ui.state import Emotion
+    from assistant.ui.system import PowerStatus
+
+    pet._power_reader = lambda: PowerStatus(15, plugged_in=False)
+    pet.check_power()
+    assert pet.bubble.showing and "15%" in pet.bubble.text
+    assert pet.pet._tired
+    pet._power_reader = lambda: PowerStatus(15, plugged_in=True)
+    pet.check_power()
+    assert not pet.pet._tired
+    assert pet.pet._override is Emotion.CHARGING
+
+
+def test_battery_alerts_can_be_turned_off(qapp, pet):
+    pet._set_battery_alerts(False)
+    pet._power_reader = lambda: __import__("assistant.ui.system", fromlist=["x"]).PowerStatus(
+        5, False
+    )
+    pet.check_power()
+    assert not pet.pet._tired and not pet.bubble.showing

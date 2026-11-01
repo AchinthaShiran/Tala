@@ -53,8 +53,11 @@ from assistant.setup import (
     recommend,
 )
 from assistant.setup.planner import model_memory_gb
+from assistant.ui.characters import CharacterError, discover, load_character
 from assistant.ui.config_store import ConfigStore, dig
+from assistant.ui.pet import DEFAULT_SIZE, PET_SIZES, render_icon, write_example_character
 from assistant.ui.theme import STYLE
+from assistant.ui.vector_characters import CHARACTERS, ROBOT
 
 _APPROVAL_LABELS = {
     "auto": "Run automatically",
@@ -97,6 +100,8 @@ class _Job(QThread):
 
 class SettingsDialog(QDialog):
     saved = Signal()  # the file changed: restart the assistant
+    character_selected = Signal(str)  # folder name of a character pack, "" = built-in robot
+    size_selected = Signal(int)  # pet window size in pixels
     new_conversation_requested = Signal()
 
     def __init__(
@@ -105,9 +110,13 @@ class SettingsDialog(QDialog):
         paths: AppPaths,
         *,
         auto_check: bool = True,
+        current_character: str = "",
+        current_size: int | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._initial_character = current_character
+        self._initial_size = current_size
         self._store = store
         self._paths = paths
         self._auto_check = auto_check
@@ -142,6 +151,7 @@ class SettingsDialog(QDialog):
             ("Safety", self._safety_tab),
             ("Tools", self._tools_tab),
             ("Memory", self._memory_tab),
+            ("Pet", self._pet_tab),
             ("Advanced", self._advanced_tab),
         ):
             self._tabs.addTab(build(), name)
@@ -1023,6 +1033,121 @@ class SettingsDialog(QDialog):
                 self._facts.forget(item.text())
         self._reload_facts()
 
+    # -- tab: pet ------------------------------------------------------------------------------
+
+    def _pet_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        intro = _label(
+            "Choose how the pet looks: one of the built-in characters, or your own artwork: "
+            "one transparent image per expression in a folder (see the example).",
+            "help",
+        )
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+
+        size_row = QHBoxLayout()
+        size_row.addWidget(QLabel("Size"))
+        self._size_combo = QComboBox()
+        for label, pixels in PET_SIZES.items():
+            self._size_combo.addItem(f"{label} ({pixels} px)", pixels)
+        wanted_size = self._initial_size if self._initial_size else PET_SIZES[DEFAULT_SIZE]
+        nearest = min(PET_SIZES.values(), key=lambda px: abs(px - wanted_size))
+        self._size_combo.setCurrentIndex(max(self._size_combo.findData(nearest), 0))
+        size_row.addWidget(self._size_combo, 1)
+        layout.addLayout(size_row)
+
+        row = QHBoxLayout()
+        self._character_combo = QComboBox()
+        self._character_combo.currentIndexChanged.connect(self._preview_character)
+        row.addWidget(self._character_combo, 1)
+        refresh = QPushButton("Refresh")
+        refresh.clicked.connect(self._reload_characters)
+        row.addWidget(refresh)
+        layout.addLayout(row)
+
+        self._character_preview = QLabel()
+        self._character_preview.setFixedHeight(140)
+        self._character_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._character_preview)
+        self._character_info = _label("", "help")
+        self._character_info.setWordWrap(True)
+        layout.addWidget(self._character_info)
+
+        buttons = QHBoxLayout()
+        folder = QPushButton("Open characters folder")
+        folder.clicked.connect(lambda: self._open_folder(self._paths.characters_dir))
+        example = QPushButton("Create an example to edit")
+        example.clicked.connect(self._create_example)
+        buttons.addWidget(folder)
+        buttons.addWidget(example)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        how = _label(
+            "Files: neutral.png (required), then happy, love, surprised, sad, curious, dizzy, "
+            "sleepy, sleeping, thinking, talking and blink. Any that are missing fall back to the "
+            "closest one. PNG with a transparent background looks best, roughly 256 to 512 pixels.",
+            "help",
+        )
+        how.setWordWrap(True)
+        layout.addWidget(how)
+        layout.addStretch(1)
+        self._reload_characters()
+        return page
+
+    def _reload_characters(self) -> None:
+        wanted = self._character_combo.currentData() if self._character_combo.count() else None
+        wanted = self._initial_character if wanted is None else wanted
+        combo = self._character_combo
+        combo.blockSignals(True)
+        combo.clear()
+        for key, character in CHARACTERS.items():
+            label = (
+                character.name if key == "robot" else f"{character.name} \u00b7 {character.tagline}"
+            )
+            combo.addItem(label, "" if key == "robot" else f"builtin:{key}")
+        for name in discover(self._paths.characters_dir):
+            combo.addItem(f"{name} (your images)", name)
+        combo.setCurrentIndex(max(combo.findData(wanted), 0))
+        combo.blockSignals(False)
+        self._preview_character()
+
+    def _preview_character(self) -> None:
+        name = self._character_combo.currentData() or ""
+        sprites, vector = None, ROBOT
+        if name.startswith("builtin:"):
+            vector = CHARACTERS.get(name[len("builtin:") :], ROBOT)
+        elif name:
+            try:
+                sprites = load_character(discover(self._paths.characters_dir)[name])
+            except (KeyError, CharacterError) as exc:
+                self._character_preview.clear()
+                _say(self._character_info, f"Cannot use this character: {exc}", "bad")
+                return
+        self._character_preview.setPixmap(render_icon(size=128, sprites=sprites, vector=vector))
+        if sprites is not None:
+            have = ", ".join(sorted(sprites.images))
+            _say(
+                self._character_info,
+                f"{sprites.name}: {len(sprites.images)} images ({have}).",
+                "help",
+            )
+        else:
+            _say(
+                self._character_info,
+                f"{vector.name}, {vector.tagline.lower()}. Follows your pointer and shows emotions.",
+                "help",
+            )
+
+    def _create_example(self) -> None:
+        folder = self._paths.characters_dir / "example-robot"
+        write_example_character(folder)
+        self._reload_characters()
+        self._character_combo.setCurrentIndex(
+            max(self._character_combo.findData("example-robot"), 0)
+        )
+        self._open_folder(folder)
+
     # -- tab: advanced -----------------------------------------------------------------------
 
     def _advanced_tab(self) -> QWidget:
@@ -1189,6 +1314,12 @@ class SettingsDialog(QDialog):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return
+        size = int(self._size_combo.currentData())
+        if size != self._initial_size:
+            self.size_selected.emit(size)
+        chosen = self._character_combo.currentData() or ""
+        if chosen != self._initial_character:
+            self.character_selected.emit(chosen)
         try:
             wrote = self._store.save(self.collect_changes())
         except ConfigError as exc:

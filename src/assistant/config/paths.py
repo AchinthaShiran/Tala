@@ -25,6 +25,11 @@ class AppPaths:
         return self.config_dir / "packs"
 
     @property
+    def characters_dir(self) -> Path:
+        """Folders of artwork that can replace the built-in desktop pet."""
+        return self.config_dir / "characters"
+
+    @property
     def checkpoints_db(self) -> Path:
         return self.data_dir / "checkpoints.sqlite"
 

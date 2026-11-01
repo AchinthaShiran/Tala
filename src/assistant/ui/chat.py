@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QGuiApplication, QKeyEvent, QResizeEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -505,6 +505,8 @@ class ChatWindow(QWidget):
         self._busy = False
         self._ready = False
         self._stick = True
+        self._closing = False
+        self._auto_scrolling = False
         self._activity = _Activity()
         self._activity_shown = False
 
@@ -540,7 +542,16 @@ class ChatWindow(QWidget):
         column.addWidget(self._scroll, 1)
         bar = self._scroll.verticalScrollBar()
         bar.rangeChanged.connect(self._on_range_changed)
-        bar.valueChanged.connect(lambda v: setattr(self, "_stick", v >= bar.maximum() - 6))
+        bar.valueChanged.connect(self._on_scrolled)
+        # The window fades in and out; the message list glides to the newest message.
+        self._fade = QPropertyAnimation(self, b"windowOpacity", self)
+        self._fade.setDuration(140)
+        self._fade.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._fade.finished.connect(self._on_fade_finished)
+        self._glide = QPropertyAnimation(bar, b"value", self)
+        self._glide.setDuration(180)
+        self._glide.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._glide.finished.connect(lambda: setattr(self, "_auto_scrolling", False))
 
         footer = QHBoxLayout()
         footer.setContentsMargins(12, 8, 12, 12)
@@ -769,9 +780,24 @@ class ChatWindow(QWidget):
             self._activity.hide()
             self._activity_shown = False
 
+    def _on_scrolled(self, value: int) -> None:
+        if not self._auto_scrolling:  # only the user's own scrolling decides whether to follow
+            self._stick = value >= self._scroll.verticalScrollBar().maximum() - 6
+
     def _on_range_changed(self, _minimum: int, maximum: int) -> None:
-        if self._stick:
-            self._scroll.verticalScrollBar().setValue(maximum)
+        if not self._stick:
+            return
+        bar = self._scroll.verticalScrollBar()
+        if not self.isVisible() or abs(maximum - bar.value()) > 600:
+            self._glide.stop()
+            self._auto_scrolling = False
+            bar.setValue(maximum)  # nothing to see: jump
+            return
+        self._auto_scrolling = True
+        self._glide.stop()
+        self._glide.setStartValue(bar.value())
+        self._glide.setEndValue(maximum)
+        self._glide.start()
 
     def anchor_to(self, pet: QRect) -> None:
         """Place the window beside the pet, on whichever side has room, inside the screen."""
@@ -786,9 +812,21 @@ class ChatWindow(QWidget):
         y = max(area.top() + 4, min(y, area.bottom() - height - 4))
         self.move(QPoint(x, y))
 
+    @property
+    def is_open(self) -> bool:
+        """Visible and not on its way out."""
+        return self.isVisible() and not self._closing
+
     def present(self, pet: QRect) -> None:
         self.anchor_to(pet)
+        self._closing = False
+        self._fade.stop()
+        if not self.isVisible():
+            self.setWindowOpacity(0.0)
         self.show()
+        self._fade.setStartValue(self.windowOpacity())
+        self._fade.setEndValue(1.0)
+        self._fade.start()
         self.raise_()
         self.activateWindow()
         self._stick = True
@@ -797,8 +835,21 @@ class ChatWindow(QWidget):
             QTimer.singleShot(0, self._input.setFocus)
 
     def hide_chat(self) -> None:
-        self.hide()
-        self.hidden_by_user.emit()
+        if not self.isVisible():
+            self.hidden_by_user.emit()
+            return
+        self._closing = True
+        self._fade.stop()
+        self._fade.setStartValue(self.windowOpacity())
+        self._fade.setEndValue(0.0)
+        self._fade.start()
+
+    def _on_fade_finished(self) -> None:
+        if self._closing:
+            self._closing = False
+            self.hide()
+            self.setWindowOpacity(1.0)
+            self.hidden_by_user.emit()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
         if event.key() == Qt.Key.Key_Escape:

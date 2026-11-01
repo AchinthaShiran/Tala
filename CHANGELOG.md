@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+- The pet watches the battery (laptops): when it is low and unplugged it looks tired (heavy eyelids, yawns,
+  a sweat drop and a pulsing battery icon); plugging in makes it cheerful with sparks. A speech bubble
+  announces low or critical battery, charging, unplugging and full. Turn it off from the right-click menu
+  (Battery alerts). Replies and approval requests now also appear in that bubble when the chat is closed.
+- Pet size: choose Tiny (70 px) to Extra large (200 px) in Settings → Pet. The default is now Small (95 px);
+  the pet resizes in place and the choice is remembered.
+
 ### Fixed
 - A tool's output sent to the model is now also limited to what fits the model's context window (about
   0.8 characters per token). Long, symbol-heavy output such as a `tree` listing could overflow a small
@@ -9,6 +17,18 @@
   answer without them.
 
 ### Added
+- Eight built-in pet characters to choose in Settings → Pet: Nexo, Kiko, Momo, Lumi, ZEN, Owlly, Slimey and
+  PupBot (plus the original robot). All follow the pointer and show every emotion.
+- Smoother pet animation: 40 frames per second with frame-rate independent timing, expressions cross-fade,
+  blinks close the eyelids gradually, the mood light glides between colours and the body breathes. The chat
+  window fades in and out and glides to new messages (and stops following when you scroll up).
+- Custom pet characters: put one transparent image per expression in `<config>/characters/<name>/` (only
+  `neutral.png` is required; missing expressions fall back to the closest one) and choose it in
+  Settings → Pet. "Create an example to edit" writes a complete template. See docs/characters.md.
+- The desktop pet is now interactive and has emotions. Its eyes and head follow the mouse pointer anywhere on
+  screen; it notices you arriving, falls in love if you keep the pointer on it, hops when clicked, is
+  surprised when picked up, happy when put down and dizzy if shaken, and gets sleepy and falls asleep when
+  ignored. It is happy after a reply, sad after an error and curious while it waits for your approval.
 - Desktop pet (`tala ui`, or `tala-ui` with no console window): a small animated, always-on-top character
   you drag anywhere and click to chat. Replies stream into the chat, tool calls show as they run, and
   commands that need approval appear as cards with the exact command (Deny is the default; destructive tools
